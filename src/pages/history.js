@@ -54,7 +54,7 @@ const historyData = [
     podium: [
       { name: "Piotr", place: 1 },
       { name: "Robert", place: 2 },
-      { name: "Marek", place: 3 },
+      { name: "Ninja", place: 3 },
     ],
   },
 ];
