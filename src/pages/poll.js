@@ -54,9 +54,9 @@ const SignupPage = ({ onClose }) => {
           <div style={headerContainerStyle}>
             <FontAwesomeIcon icon={faTrophy} style={trophyIconStyle} />
             <h2 style={headingStyle}>
-              Zapisy! Typer WORLD CUP 2026
+              Zapisy! Typer Ekstraklasa Jesień 2026
             </h2>
-            <p style={subHeadingStyle}>Udowodnij, że znasz się na piłce!</p>
+            <p style={subHeadingStyle}>Udowodnij, że znasz się na polskiej piłce!</p>
           </div>
 
           <hr style={dividerStyle} />
@@ -67,7 +67,7 @@ const SignupPage = ({ onClose }) => {
               <FontAwesomeIcon icon={faCoins} style={{ color: "#ffca28", marginRight: "6px" }} />
               Zrzutka po <strong>60</strong> PLN.
             </p>
-            <span style={deadlineBadgeStyle}>Zapisy do 10.06</span>
+            <span style={deadlineBadgeStyle}>Zapisy do 24.07</span>
           </div>
 
           {/* Form */}

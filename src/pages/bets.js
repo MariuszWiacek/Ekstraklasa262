@@ -6,13 +6,13 @@ import usersData from '../gameData/users.json';
 import gameData from '../gameData/data.json';
 import teamsData from '../gameData/teams.json';
 import { getAuth } from 'firebase/auth';
-import { initializeApp, getApps } from 'firebase/app';
 import ExpandableCard from '../components/expandableCard';
 import Pagination from '../components/Pagination';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser } from '@fortawesome/free-solid-svg-icons';
 import { DateTime } from 'luxon';
 import InstallPWAButton from '../components/PWA';
+import { initializeApp, getApps } from 'firebase/app';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDq4d4qabXG-fMMsZijtR6uhFVl85rMmMM",
@@ -26,8 +26,14 @@ const firebaseConfig = {
 };
 
 
-const auth = getAuth();
-const database = getDatabase();
+const app = getApps().length
+  ? getApps()[0]
+  : initializeApp(firebaseConfig);
+
+
+const auth = getAuth(app);
+const database = getDatabase(app);
+
 
 const groupGamesIntoKolejki = (games) => {
   const kolejki = [];
@@ -144,16 +150,40 @@ const Bets = () => {
   const toggleEditableOn = () => setAreInputsEditable(true);
 
   // --- STYLE DLA MODALA ---
-  const modalOverlayStyle = {
-    position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-    backgroundColor: "rgba(0, 0, 0, 0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999
-  };
+const modalOverlayStyle = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  width: "100%",
+  height: "100%",
+  backgroundColor: "rgba(0,0,0,0.75)",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  zIndex: 9999
+};
   const modalStyle = {
-    background: "#015f01a9", padding: "25px", borderRadius: "20px", width: "85%", maxWidth: "350px", textAlign: "center", color: "red"
-  };
-  const modalButtonStyle = {
-    backgroundColor: "#DC3545", color: "white", border: "none", padding: "10px 30px", borderRadius: "15px", fontWeight: "bold", marginTop: "15px", cursor: "pointer"
-  };
+  backgroundColor: "rgba(0,100,0,0.7)",
+  padding: "25px",
+  borderRadius: "20px",
+  width: "85%",
+  maxWidth: "350px",
+  textAlign: "center",
+  color: "white",
+  boxShadow: "0 0 20px rgba(0,255,0,0.5)"
+};
+
+
+const modalButtonStyle = {
+  backgroundColor: "#ff4444",
+  color: "white",
+  border: "none",
+  padding: "10px 35px",
+  borderRadius: "15px",
+  fontWeight: "bold",
+  marginTop: "15px",
+  cursor: "pointer"
+};
 
   return (
     <div className="fade-in" style={{ textAlign: 'center', color: 'yellow' }}>
