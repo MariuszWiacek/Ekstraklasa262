@@ -1,13 +1,24 @@
 import React, { useEffect, useState } from "react";
 
+// 1. CATCH THE EVENT GLOBALLY (outside the component)
+// If the browser fires the event before React loads, we save it here.
+let globalDeferredPrompt = null;
+
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    globalDeferredPrompt = e;
+  });
+}
+
 const InstallPWAButton = () => {
   const [isIOS, setIsIOS] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [hasPrompt, setHasPrompt] = useState(false); // Tracks if prompt is ready
   const [showInstructions, setShowInstructions] = useState(false);
 
   useEffect(() => {
-    // 1. Sprawdź czy już zainstalowano
+    // 2. Check if already installed
     if (
       window.matchMedia("(display-mode: standalone)").matches ||
       window.navigator.standalone === true
@@ -15,62 +26,59 @@ const InstallPWAButton = () => {
       setIsInstalled(true);
     }
 
-    // 2. Wykryj iOS
+    // 3. Detect iOS
     const ios = /iphone|ipad|ipod/i.test(window.navigator.userAgent) && !window.MSStream;
     setIsIOS(ios);
 
-    // 3. Obsługa Android/Chrome (standardowy prompt)
+    // 4. Check if the global prompt was already caught
+    if (globalDeferredPrompt) {
+      setHasPrompt(true);
+    }
+
+    // 5. Also listen normally in case it fires late
     const handler = (e) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      globalDeferredPrompt = e;
+      setHasPrompt(true);
     };
 
     window.addEventListener("beforeinstallprompt", handler);
-
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
   const handleClick = async () => {
-    if (deferredPrompt) {
-      // Dla Androida/PC
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") setDeferredPrompt(null);
+    if (globalDeferredPrompt) {
+      globalDeferredPrompt.prompt();
+      const { outcome } = await globalDeferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        globalDeferredPrompt = null;
+        setHasPrompt(false);
+      }
     } else if (isIOS) {
-      // Dla iPhone - pokazujemy instrukcję
       setShowInstructions(true);
     }
   };
 
-  if (isInstalled) return null;
+  // Button shows up if not installed AND (we have the prompt OR it's iOS)
+  const isAvailable = !isInstalled && (hasPrompt || isIOS);
 
-  // Przycisk powinien być aktywny jeśli:
-  // a) Mamy prompt (Android) LUB b) To jest iOS
-  const isAvailable = deferredPrompt || isIOS;
+  if (!isAvailable) return null;
 
   return (
     <>
-      <button
-        onClick={handleClick}
-        style={{
-          ...buttonStyle,
-          opacity: isAvailable ? 1 : 0.5,
-          cursor: isAvailable ? "pointer" : "not-allowed",
-        }}
-      >
+      <button onClick={handleClick} style={buttonStyle}>
         📲 Zainstaluj aplikację
       </button>
 
-      {/* Modal z instrukcją dla iOS */}
+      {/* iOS Modal */}
       {showInstructions && (
         <div style={modalOverlayStyle} onClick={() => setShowInstructions(false)}>
           <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
             <h3>Instalacja na iPhone</h3>
             <p>Aby dodać aplikację do ekranu głównego:</p>
             <ol style={{ textAlign: "left" }}>
-              <li>Kliknij ikonę <strong>Udostępnij</strong> (kwadrat ze strzałką) w dolnym menu Safari.</li>
-              <li>Przewiń w dół i wybierz <strong>"Do ekranu początkowego"</strong>.</li>
-              <li>Kliknij <strong>"Dodaj"</strong> w prawym górnym rogu.</li>
+              <li>Kliknij ikonę <strong>Udostępnij</strong> w Safari.</li>
+              <li>Wybierz <strong>"Do ekranu początkowego"</strong>.</li>
             </ol>
             <button onClick={() => setShowInstructions(false)} style={closeButtonStyle}>
               Rozumiem
@@ -91,6 +99,7 @@ const buttonStyle = {
   borderRadius: "30px",
   fontWeight: "bold",
   fontSize: "16px",
+  cursor: "pointer",
 };
 
 const modalOverlayStyle = {
@@ -111,13 +120,12 @@ const modalStyle = {
   maxWidth: "300px",
   textAlign: "center",
   color: "#333",
-  boxShadow: "0 10px 25px rgba(0,0,0,0.2)"
 };
 
 const closeButtonStyle = {
   marginTop: "15px",
   padding: "10px 20px",
-  backgroundColor: "#007AFF", // Niebieski kolor Apple
+  backgroundColor: "#007AFF",
   color: "white",
   border: "none",
   borderRadius: "10px",
