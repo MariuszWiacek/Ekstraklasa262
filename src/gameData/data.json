@@ -48,7 +48,7 @@
     "id": 6,
     "kolejkaId": 1,
     "home": "Raków",
-    "away": "Wisła Płock",
+    "away": "Wisła P.",
     "kickoff": "14:45",
     "date": "2026-07-26",
     "disabled": false
@@ -65,7 +65,7 @@
   {
     "id": 8,
     "kolejkaId": 1,
-    "home": "Wisła Kraków",
+    "home": "Wisła K.",
     "away": "GKS",
     "kickoff": "20:15",
     "date": "2026-07-26",
@@ -130,7 +130,7 @@
     "id": 15,
     "kolejkaId": 2,
     "home": "Piast",
-    "away": "Wisła Kraków",
+    "away": "Wisła K.",
     "kickoff": "14:45",
     "date": "2026-08-01",
     "disabled": false
@@ -156,7 +156,7 @@
   {
     "id": 18,
     "kolejkaId": 2,
-    "home": "Wisła Płock",
+    "home": "Wisła P.",
     "away": "Widzew",
     "kickoff": "18:00",
     "date": "2026-07-31",
@@ -238,8 +238,8 @@
   {
     "id": 27,
     "kolejkaId": 3,
-    "home": "Wisła Kraków",
-    "away": "Wisła Płock",
+    "home": "Wisła K.",
+    "away": "Wisła P.",
     "kickoff": "20:30",
     "date": "2026-08-07",
     "disabled": false
