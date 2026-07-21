@@ -1,0 +1,25 @@
+/* results.css */
+.table-container {
+    overflow-x: auto;
+    width: 100% !important;
+    background-color: '#212529ab' !important,
+    
+    
+  }
+  
+  .table-container table {
+    min-width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .table-container th,
+  .table-container td {
+    padding: 8px;
+    border: 1px solid #444;
+    text-align: left;
+  }
+  
+  .small-font {
+    font-size: 6px !important;
+  }
+  

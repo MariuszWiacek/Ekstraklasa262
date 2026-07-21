@@ -1,0 +1,26 @@
+const KolejkaNavigation = ({ currentKolejkaIndex, setCurrentKolejkaIndex, totalKolejki }) => {
+  return (
+    <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+      {Array.from({ length: totalKolejki }).map((_, index) => (
+        <button
+          key={index}
+          onClick={() => setCurrentKolejkaIndex(index)}
+          style={{
+            backgroundColor: index === currentKolejkaIndex ? '#DC3545' : '#212529',
+            color: 'white',
+            padding: '10px 20px',
+            border: 'none',
+            borderRadius: '10px',
+            cursor: 'pointer',
+            display: 'inline-block',
+            margin: '10px',
+            fontSize: '14px',
+            transition: 'background-color 0.3s',
+          }}
+        >
+          Kolejka {index + 1}
+        </button>
+      ))}
+    </div>
+  );
+};

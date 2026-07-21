@@ -1,0 +1,61 @@
+/* Guestbook.css */
+/* Chatbox container */
+.chatbox {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 10px;
+    background-color: #ffffff00;
+    overflow: hidden;
+  
+  }
+  
+  /* Chat messages container */
+  .messages {
+    
+    font-family: 'Rubik', sans-serif;
+    font-size: 14px;
+    flex: 1;
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #2727277b;
+    border-radius: 8px;
+    overflow-y: scroll;
+    scrollbar-width: thin;
+    scrollbar-color: #888888 #f0f0f0;
+    max-height: 400px;
+  }
+  
+  /* Custom scrollbar style */
+  .messages::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .messages::-webkit-scrollbar-thumb {
+    background-color: #fb000071;
+  }
+  
+  /* Chat input form */
+  .form {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .username-input,
+  .message-input {
+    padding: 10px;
+    font-size: 14px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .send-button {
+    padding: 10px;
+    background-color: #ff00007b;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  

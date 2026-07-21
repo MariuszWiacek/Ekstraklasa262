@@ -1,0 +1,304 @@
+body {
+  margin: 0;
+  font-family: 'Syne', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-image: url("../images/stadium.png") !important; /* Specify the correct path to your image */
+  background-size: cover; /* Adjust the background size as needed */
+  background-repeat: no-repeat; /* Prevent the image from repeating */
+  position: relative; /* Needed for the overlay */
+  background-attachment: fixed; /* Ensures the image covers the full height */
+
+  #logo {
+    font-family: 'Impact', sans-serif;
+    font-size: 36px;
+    font-weight: bold;
+  }
+  
+  /* Add a pseudo-element to create the overlay */
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #00200e; /* Dark color */
+    opacity: 0.8; /* Adjust the opacity to make it 80% darker */
+    z-index: -1; /* Place the overlay behind the content */
+  }
+}
+a{
+  color: aliceblue !important;
+  text-decoration: none !important;
+}
+
+h2 {
+  color: rgb(255, 255, 255) !important;
+}
+
+h3 {
+  color: rgb(254, 233, 0) !important;
+}
+h4 {
+  color: rgba(0, 0, 0, 0.774) !important;
+  size: 30px !important;
+}
+
+ul{
+  color: aliceblue !important;
+}
+
+h1 {
+  color: rgb(255, 255, 255) !important ;
+  font-family: "Rubik"
+}
+
+p {
+  color: aliceblue;
+  font-family: "Rubik";
+}
+
+/* styles.css */
+.glossy-text {
+  font-family: 'Rubik';
+  font-size: 36px;
+  font-weight: bold;
+  font-style: italic;
+  background: linear-gradient(45deg, aliceblue, gold);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  position: relative;
+  display: inline-block;
+  margin-left: 10px;
+  margin-right: 5px;
+  margin-top: 1px;
+}
+
+.glossy-text::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+  opacity: 0.8;
+  -webkit-mask: linear-gradient(#fff, #fff) content-box, linear-gradient(#fff, #fff);
+  mask: linear-gradient(#fff, #fff) content-box, linear-gradient(#fff, #fff);
+  -webkit-mask-composite: source-out;
+  mask-composite: subtract;
+  pointer-events: none;
+}
+
+p2 {
+  color: #00ff33b5;
+  font-family: "Rubik";
+  font-weight: bolder;
+}
+td {
+  color: rgb(254, 254, 254) ;
+  font-family: "Rubik";
+ 
+}
+
+th {
+  font-size: 10px !important;
+  color: rgb(255, 255, 255);
+}
+.navbar-toggler {
+  color: #30292985 !important;
+  background-color: aliceblue !important;
+  font-size: 16px !important;
+}
+span {
+  font-size: 12px !important;
+  font-family: "Rubik"; 
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+ /* infobar 
+
+/* InfoBar.css */
+.info-bar-container {
+  max-width: 100%;
+  overflow: hidden;
+}
+/* CSS in your App.css file or a separate CSS file */
+.navbar-toggler {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.navbar-toggler .bar {
+  display: block;
+  width: 25px;
+  height: 3px;
+  background-color: #320000;
+  margin: 4px auto;
+  transition: 0.4s;
+}
+
+.navbar-toggler.open .bar:nth-child(1) {
+  transform: rotate(-45deg) translate(-5px, 5px);
+}
+
+.navbar-toggler.open .bar:nth-child(2) {
+  opacity: 0;
+}
+
+.navbar-toggler.open .bar:nth-child(3) {
+  transform: rotate(45deg) translate(-5px, -5px);
+}
+.nav-link {
+  color: rgb(255, 255, 255) !important; /* Initial color */
+  transition: color 0.3s ease; /* Smooth transition */
+}
+
+.nav-link:hover {
+  color: #ffea02!important; /* Change to desired color on hover */
+}
+
+
+@keyframes scrollInfoMessage {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animated-text {
+  display: inline-block;
+  animation: textAnimation 2s infinite;
+}
+
+@keyframes textAnimation {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes custom-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-background {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animated-text {
+  animation: slide-background 3s linear infinite, fade-in 1.5s;
+}
+
+.logo {
+  width: 20px;
+  height: auto;
+  margin-right: 10px;
+}
+
+.td-mobile {
+  font-size: 15px !important;
+}
+
+
+
+
+@media (max-width: 768px) {
+  .logo {
+    width: 13px !important; /* Adjust the size for mobile */
+    margin-right: 5px; /* Adjust the margin for mobile */
+  }
+
+  .card {
+    width: 100% !important; 
+  }
+  span {
+    font-weight: bold;
+    font-size: 10px !important;
+  }
+  p {
+    font-size: 12px;
+  }
+  tr {
+    font-size: 10px;
+  }
+
+  td {
+    font-size: 15px !important;
+  }
+
+  .td-mobile {
+    font-size: 10px !important;
+  }
+
+  .date {
+    font-size: 10px !important;
+  }
+
+  a {font-size: 14px;}
+  h2 {font-size: 24px !important;}
+  h1 {font-size: 20px !important;}
+
+  .cellStyle {
+    font-size: 14px !important; /* Adjust the font size for mobile devices */
+  }
+
+
+
+}
