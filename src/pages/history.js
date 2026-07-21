@@ -2,8 +2,7 @@ import React from "react";
 import { FaMedal } from "react-icons/fa";
 
 const historyData = [
-
-   {
+  {
     title: "World Cup 2026",
     link: "https://wc2026.vercel.app/",
     podium: [
@@ -217,6 +216,23 @@ const Historia = () => {
       return b[1][2] - a[1][2];
     });
 
+  // 3. Calculate ranks considering ties (equal medals = same place)
+  let currentRank = 0;
+  const rankedMedalists = sortedMedalists.map(([name, medals], index) => {
+    const prevMedals = index > 0 ? sortedMedalists[index - 1][1] : null;
+    const isTieWithPrev =
+      prevMedals &&
+      medals[0] === prevMedals[0] &&
+      medals[1] === prevMedals[1] &&
+      medals[2] === prevMedals[2];
+
+    if (!isTieWithPrev) {
+      currentRank = index + 1;
+    }
+
+    return { name, medals, rank: currentRank };
+  });
+
   return (
     <div style={styles.page}>
       <div style={styles.intro}>
@@ -243,18 +259,22 @@ const Historia = () => {
 
       {/* Medalists ranked list */}
       <section style={styles.medalistsWrapper}>
-        <h2 style={styles.medalistsTitle}>🏅 Medaliści</h2><hr />
+        <h2 style={styles.medalistsTitle}>🏅 Medaliści</h2>
+        <hr />
         <ul style={styles.medalistsList}>
-          {sortedMedalists.map(([name, medals], i) => (
+          {rankedMedalists.map(({ name, medals, rank }) => (
             <li key={name} style={styles.medalistItem}>
-              <span style={styles.medalistRank}>{i + 1}.</span>
+              <span style={styles.medalistRank}>{rank}.</span>
               <span>{name}</span>
               <span style={styles.medalIcons}>
                 {[0, 1, 2].map((idx) =>
                   [...Array(medals[idx])].map((_, medalIndex) => (
                     <FaMedal
                       key={`${idx}-${medalIndex}`}
-                      style={{ ...styles.medalIcon, color: medalColors[idx + 1] }}
+                      style={{
+                        ...styles.medalIcon,
+                        color: medalColors[idx + 1],
+                      }}
                       title={
                         idx === 0
                           ? "Złoty medal"
@@ -270,8 +290,9 @@ const Historia = () => {
           ))}
         </ul>
       </section>
-<hr />
-      <h1 style={styles.title}>🏆 Galeria Mistrzów</h1><hr />
+      <hr />
+      <h1 style={styles.title}>🏆 Galeria Mistrzów</h1>
+      <hr />
 
       {historyData.map((edycja, index) => (
         <section key={index} style={styles.card}>
@@ -295,9 +316,15 @@ const Historia = () => {
               if (place === 1) {
                 nameStyle = { ...styles.winnerName, color };
               } else if (place === 2) {
-                nameStyle = { ...styles.secondThirdName, color: medalColors[2] };
+                nameStyle = {
+                  ...styles.secondThirdName,
+                  color: medalColors[2],
+                };
               } else if (place === 3) {
-                nameStyle = { ...styles.secondThirdName, color: medalColors[3] };
+                nameStyle = {
+                  ...styles.secondThirdName,
+                  color: medalColors[3],
+                };
               } else {
                 nameStyle = { color };
               }
