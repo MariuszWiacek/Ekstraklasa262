@@ -2,7 +2,7 @@
 {
     "Cracovia": {
       
-      "logo": "images/herby/Craxa.png"
+      "logo": "images/herby/Cracovia.png"
     },
     "Piast": {
       
@@ -20,9 +20,9 @@
 
       "logo": "images/herby/Jaga.png"
     },
-    "Arka": {
+    "Wieczysta": {
       
-      "logo": "images/herby/Arka.png"
+      "logo": "images/herby/Wieczysta.png"
     },
     "Lech": {
       
@@ -56,9 +56,9 @@
       
       "logo": "images/herby/Korona.png"
     },
-    "Termalica": {
+    "Wisla K.": {
       
-      "logo": "images/herby/Terma.png"
+      "logo": "images/herby/WislaK.png"
     },
     "Widzew": {
      
@@ -68,8 +68,8 @@
       
       "logo": "images/herby/Wisla.png"
     },
-    "Lechia": {
-      "logo": "images/herby/Lechia.png"
+    "Śląsk": {
+      "logo": "images/herby/Slask.png"
     }
   }
   
