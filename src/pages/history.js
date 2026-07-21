@@ -2,6 +2,25 @@ import React from "react";
 import { FaMedal } from "react-icons/fa";
 
 const historyData = [
+
+   {
+    title: "World Cup 2026",
+    link: "https://wc2026.vercel.app/",
+    podium: [
+      { name: "Ninja", place: 1 },
+      { name: "Adamek", place: 2 },
+      { name: "Kaczka", place: 3 },
+    ],
+  },
+  {
+    title: "Ekstraklasa Wiosna 2026",
+    link: "https://ekstraklasa252.vercel.app/",
+    podium: [
+      { name: "Adamek", place: 1 },
+      { name: "Lirael", place: 2 },
+      { name: "Kornas", place: 3 },
+    ],
+  },
   {
     title: "Ekstraklasa Jesień 2025",
     link: "https://ekstraklasa252.vercel.app/",

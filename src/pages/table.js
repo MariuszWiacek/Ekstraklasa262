@@ -6,14 +6,14 @@ import { calculatePoints } from '../components/calculatePoints';
 import Stats from './stats';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB3AOrOzAQ-WVMjeZ3ayNwklR7axBgXJ0I",
-  authDomain: "wiosna26-951d6.firebaseapp.com",
-  databaseURL: "https://wiosna26-951d6-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "wiosna26-951d6",
-  storageBucket: "wiosna26-951d6.firebasestorage.app",
-  messagingSenderId: "58145083288",
-  appId: "1:58145083288:web:f2d813d31a64bcdfcba5ed",
-  measurementId: "G-0R5JLD75SW"
+  apiKey: "AIzaSyDq4d4qabXG-fMMsZijtR6uhFVl85rMmMM",
+  authDomain: "jesien2026.firebaseapp.com",
+  databaseURL: "https://jesien2026-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "jesien2026",
+  storageBucket: "jesien2026.firebasestorage.app",
+  messagingSenderId: "656642340528",
+  appId: "1:656642340528:web:33265dcdadba31c1842d75",
+  measurementId: "G-LK891R7MQ1"
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
