@@ -3,9 +3,11 @@ import { getDatabase, ref, set, onValue } from 'firebase/database';
 import gameData from '../gameData/data.json';
 import teamsData from '../gameData/teams.json';
 import Pagination from '../components/Pagination';
+import Flag from 'react-world-flags';
 
 const Admin = () => {
-  const [games, setGames] = useState([]);
+  // Removed setGames here since it's never used
+  const [games] = useState(gameData);
   const [resultsInput, setResultsInput] = useState({});
   const [password, setPassword] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
@@ -16,12 +18,8 @@ const Admin = () => {
 
   const getTeamLogo = (teamName) => {
     const team = teamsData[teamName];
-    return team ? team.logo : '';
+    return team ? team.logo : null;
   };
-
-  useEffect(() => {
-    setGames(gameData);
-  }, [gameData]);
 
   useEffect(() => {
     const resultsRef = ref(getDatabase(), 'results');
@@ -45,7 +43,7 @@ const Admin = () => {
 
     allUsers.forEach((user) => {
       games.forEach((game) => {
-        if (!submittedData[user][game.id]) {
+        if (submittedData[user] && !submittedData[user][game.id]) {
           if (!nonBettorsData[game.id]) {
             nonBettorsData[game.id] = [];
           }
@@ -92,13 +90,13 @@ const Admin = () => {
   // Calculate total pages
   const totalPages = Math.ceil(games.length / gamesPerPage);
 
-  // Set current page to the last page when component is mounted
+  // Automatically find the active round on mount
   useEffect(() => {
     if (games.length > 0) {
       const now = new Date();
 
       // Find the index of the next game based on current date and time
-      const nextGameIndex = gameData.findIndex(game => new Date(`${game.date}T${game.kickoff}:00+02:00`) > now);
+      const nextGameIndex = games.findIndex(game => new Date(`${game.date}T${game.kickoff}:00+02:00`) > now);
 
       // If a next game exists, calculate which "kolejka" it belongs to
       if (nextGameIndex !== -1) {
@@ -111,6 +109,19 @@ const Admin = () => {
       }
     }
   }, [games]);
+
+  // Clean inline style for rendering flags uniformly inside the admin table grid
+  const flagStyle = {
+    width: '32px',
+    height: '22px',
+    verticalAlign: 'middle',
+    marginRight: '8px',
+    marginLeft: '8px',
+    display: 'inline-block',
+    borderRadius: '3px',
+    boxShadow: '0px 1px 3px rgba(0,0,0,0.3)',
+    objectFit: 'cover'
+  };
 
   if (!authenticated) {
     return (
@@ -159,7 +170,6 @@ const Admin = () => {
           marginTop: '5%',
         }}
       >
-        
         <thead>
           <tr>
             <th style={{ borderBottom: '0.5px solid #444', textAlign: 'center' }}></th>
@@ -177,12 +187,16 @@ const Admin = () => {
                 </td>
               </tr>
               <tr style={{ borderBottom: '1px solid #444' }}>
+                {/* HOME TEAM FLAG AND NAME */}
                 <td style={{ textAlign: 'center', paddingRight: '10px', fontSize: '20px' }}>
-                  <img src={getTeamLogo(game.home)} alt={`${game.home} logo`} className="logo" /> {game.home}
+                  <Flag code={getTeamLogo(game.home)} style={flagStyle} fallback={<span>🏳️ </span>} />
+                  {game.home}
                 </td>
                 <td style={{ textAlign: 'center', fontSize: '20px' }}>-</td>
+                {/* AWAY TEAM FLAG AND NAME */}
                 <td style={{ textAlign: 'left', paddingLeft: '10px', fontSize: '20px' }}>
-                  <img src={getTeamLogo(game.away)} alt={`${game.away} logo`} className="logo" /> {game.away}
+                  <Flag code={getTeamLogo(game.away)} style={flagStyle} fallback={<span>🏳️ </span>} />
+                  {game.away}
                 </td>
                 <td style={{ textAlign: 'center', fontSize: '20px' }}>
                   <input
@@ -197,6 +211,7 @@ const Admin = () => {
                       textAlign: 'center',
                       border: '1px solid #ccc',
                       borderRadius: '5px',
+                      backgroundColor: 'white'
                     }}
                   />
                 </td>

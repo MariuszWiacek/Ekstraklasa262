@@ -1,9 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getDatabase, ref, push, onValue } from 'firebase/database';
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-
-
+import { getDatabase, ref, push, onValue } from 'firebase/database';
 import '../styles/guestbook.css';
 
 const firebaseConfig = {
@@ -17,22 +14,14 @@ const firebaseConfig = {
   measurementId: "G-1TZ4B0BK9D"
 };
 
-const Chatbox = ({ isOpen, toggleChatbox }) => {
-  const [username, setUsername] = useState('');
+const secondaryApp = initializeApp(firebaseConfig, 'chatbox-firebase');
+const db = getDatabase(secondaryApp);
 
+const Chatbox = ({ isOpen, toggleChatbox, externalUnreadCount }) => {
+  const [username, setUsername] = useState('');
   const [message, setMessage] = useState('');
   const [guestbookEntries, setGuestbookEntries] = useState([]);
   const chatContainerRef = useRef(null);
-
-  // Initialize a secondary Firebase app
-  const secondaryApp = initializeApp(firebaseConfig, 'secondary');
-  const analytics = getAnalytics(secondaryApp);
-  const db = getDatabase(secondaryApp);
-
-  useEffect(() => {
-    // Scroll to the bottom of the chat container when the component mounts or when guestbookEntries change
-    scrollToBottom();
-  }, [guestbookEntries]);
 
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
@@ -40,159 +29,212 @@ const Chatbox = ({ isOpen, toggleChatbox }) => {
     }
   };
 
+  // Scroll when chatbox opens or new messages populate
   useEffect(() => {
-    // Fetch guestbook entries from Firebase when the component mounts
+    if (isOpen) {
+      setTimeout(scrollToBottom, 60);
+    }
+  }, [isOpen, guestbookEntries.length]);
+
+  // Sync Database Entries
+  useEffect(() => {
     const entriesRef = ref(db, 'guestbookEntries');
-    onValue(entriesRef, (snapshot) => {
+    const unsubscribe = onValue(entriesRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.val();
         if (data) {
-          const entries = Object.values(data).reverse(); // Reverse the order of entries
-          setGuestbookEntries(entries);
-          scrollToBottom(); // Scroll to the bottom after setting chat entries
+          setGuestbookEntries(Object.values(data));
         }
       }
     });
-  }, [db]);
+    return () => unsubscribe();
+  }, []);
 
+  // Sync Local Username Storage
   useEffect(() => {
     const handleStorageChange = () => {
       const storedUser = localStorage.getItem('selectedUser');
       setUsername(storedUser || '');
     };
-  
-    // Set username initially based on what's in localStorage
     handleStorageChange();
-  
-    // Add an event listener to detect changes to localStorage
     window.addEventListener('storage', handleStorageChange);
-  
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
   
-
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!message.trim()) return;
 
-    // Push the new entry to the Firebase Realtime Database
     const entriesRef = ref(db, 'guestbookEntries');
-    const now = new Date();
-    const formattedDateAndTime = now.toISOString(); // Use toISOString to format date and time
-
     push(entriesRef, {
-      name: username, // Use the username in the entry
-      message,
-      dateAndTime: formattedDateAndTime, // Include date and time in the entry
+      name: username || 'Anonim',
+      message: message.trim(),
+      dateAndTime: new Date().toISOString(),
     });
 
-    // Save the username to local storage
     localStorage.setItem('username', username);
-
-    // Clear the input fields
     setMessage('');
   };
 
-  const chatboxStyle = {
-    position: 'fixed',
-    bottom: isOpen ? '0' : '-400px', // Adjust as per your needs
-    right: '20px',
-    width: '300px',
-    height: '400px',
-    backgroundColor: isOpen ? '#008131' : '#fff', // Change background color based on isOpen state
-    boxShadow: '0px 0px 10px rgba(0,0,0,0.1)',
-    borderRadius: '10px 10px 0 0',
-    transition: 'bottom 0.3s ease',
-    zIndex: 1001,
-    display: 'flex',
-    flexDirection: 'column',
-  };
-
-  const headerStyle = {
-    backgroundColor: isOpen ? 'darkgreen' : '#007bff', // Adjust header background color
-    color: 'white',
-    padding: '10px',
-    borderTopLeftRadius: '10px',
-    borderTopRightRadius: '10px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  };
-
-  const closeButtonStyle = {
-    background: 'none',
-    border: 'none',
-    color: 'white',
-    fontSize: '16px',
-    cursor: 'pointer',
-  };
-
-  const messagesContainerStyle = {
-    fontFamily: 'Rubik, sans-serif',
-    fontSize: '14px',
-    flex: 1,
-    border: '1px solid #ccc',
-    padding: '10px',
-    backgroundColor: '#2727277b',
-    borderRadius: '8px',
-    overflowY: 'scroll',
-    scrollbarWidth: 'thin',
-    scrollbarColor: '#888888 #f0f0f0',
-    maxHeight: '400px',
-    marginBottom: '10px', // Adjust margin as needed
-  };
-
-  const messageStyle = {
-    whiteSpace: 'nowrap',
-    fontSize: '16px',
-    color: 'aliceblue',
-    fontWeight: 'bold',
+  // --- Theme Styles ---
+  const styles = {
+    chatbox: {
+      position: 'fixed',
+      right: '20px',
+      width: '320px',
+      height: '420px',
+      boxShadow: '0px 8px 24px rgba(0,0,0,0.3)',
+      borderRadius: '12px 12px 0 0',
+      transition: 'bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+      zIndex: 1001,
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      fontFamily: "'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+    },
+    header: {
+      backgroundColor: '#0274ff',
+      color: 'white',
+      padding: '12px 14px',
+      fontWeight: 'bold',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    closeButton: {
+      background: 'none',
+      border: 'none',
+      color: 'white',
+      fontSize: '14px',
+      cursor: 'pointer',
+    },
+    messagesContainer: {
+      flex: 1,
+      padding: '12px',
+      backgroundColor: '#121212',
+      overflowY: 'auto',
+    },
+    messageList: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '10px'
+    },
+    messageWrapper: {
+      backgroundColor: '#242424',
+      padding: '8px 12px',
+      borderRadius: '8px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '2px',
+      wordBreak: 'break-word',     // STOPS HORIZONTAL SCROLL
+      overflowWrap: 'anywhere'    // BREAKS UNBROKEN STRINGS SAFELY
+    },
+    metaRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'baseline'
+    },
+    username: {
+      color: '#4cd964',
+      fontSize: '13px',
+      fontWeight: '600'
+    },
+    dateTime: {
+      color: '#8e8e93',
+      fontSize: '10px'
+    },
+    messageContent: {
+      color: '#f5f5f7',
+      fontSize: '14px',
+      lineHeight: '1.4'
+    },
+    form: {
+      padding: '12px',
+      backgroundColor: '#1e1e1e',
+      borderTop: '1px solid #2c2c2e',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+      paddingBottom: '60px' // Added buffer room so mobile navigation footer does not overlap inputs
+    },
+    inputDisabled: {
+      width: '100%',
+      padding: '6px 10px',
+      backgroundColor: '#2c2c2e',
+      border: 'none',
+      borderRadius: '6px',
+      color: '#aeaeae',
+      fontSize: '12px',
+      boxSizing: 'border-box'
+    },
+    inputGroup: {
+      display: 'flex',
+      gap: '6px'
+    },
+    inputMessage: {
+      flex: 1,
+      padding: '10px',
+      backgroundColor: '#2c2c2e',
+      border: 'none',
+      borderRadius: '6px',
+      color: '#fff',
+      fontSize: '14px'
+    },
+    sendButton: {
+      backgroundColor: '#008131',
+      color: 'white',
+      border: 'none',
+      borderRadius: '6px',
+      padding: '0 16px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      fontSize: '13px'
+    }
   };
 
   return (
-    <div style={chatboxStyle}>
-      <div style={headerStyle}>
-        Chatbox
-        <button style={closeButtonStyle} onClick={toggleChatbox}>
-          &times;
-        </button>
+    <div style={{ ...styles.chatbox, bottom: isOpen ? '0' : '-440px', backgroundColor: isOpen ? '#1e1e1e' : '#fff' }}>
+      <div style={styles.header}>
+        <span>Chatbox</span>
+        <button style={styles.closeButton} onClick={toggleChatbox}>✕</button>
       </div>
-      <div className="messages" style={messagesContainerStyle} ref={chatContainerRef}>
-        <h2 className="chat-title" style={{ textAlign: 'center', color: 'aliceblue', textDecoration: 'underline', marginBottom: '5%' }}>Chatbox:</h2>
-        <ul className="message-list">
+
+      <div style={styles.messagesContainer} ref={chatContainerRef}>
+        <div style={styles.messageList}>
           {guestbookEntries.map((entry, index) => (
-            <div key={index} className="message">
-              <strong className="username" style={{ color: "red" }}>{entry.name}:</strong> <strong style={{ color: "aliceblue" }}>{entry.message}</strong>
-              <div className="date-time" style={{ color: "grey", fontSize:'10px' }}>wysłano :  {new Date(entry.dateAndTime).toLocaleString()}</div>
+            <div key={index} style={styles.messageWrapper}>
+              <div style={styles.metaRow}>
+                <span style={styles.username}>{entry.name || 'Anonim'}:</span>
+                <span style={styles.dateTime}>
+                  {new Date(entry.dateAndTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              <div style={styles.messageContent}>{entry.message}</div>
             </div>
-          )).reverse() // Reverse the order when mapping to display newest messages at the bottom
-        }
-        </ul>
+          ))}
+        </div>
       </div>
-      <form className="form" onSubmit={handleSubmit} style={{ padding: '10px' }}>
+
+      <form onSubmit={handleSubmit} style={styles.form}>
         <input
           type="text"
-          className="username-input"
-          placeholder="uzytkownik"
+          placeholder="Użytkownik"
           value={username}
           readOnly
-          onChange={(e) => setUsername(e.target.value)}
           required
-          style={{ marginBottom: '10px', width: '100%', padding: '8px' }}
+          style={styles.inputDisabled}
         />
-        <input
-          type="text"
-          className="message-input"
-          placeholder="wiadomość"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          required
-          style={{ marginBottom: '10px', width: '100%', padding: '8px' }}
-        />
-        <button type="submit" className="send-button" style={{ color: 'aliceblue', width: '100%', padding: '10px' }}>
-          Wyślij
-        </button>
+        <div style={styles.inputGroup}>
+          <input
+            type="text"
+            placeholder="Napisz wiadomość..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            required
+            style={styles.inputMessage}
+          />
+          <button type="submit" style={styles.sendButton}>Wyślij</button>
+        </div>
       </form>
     </div>
   );

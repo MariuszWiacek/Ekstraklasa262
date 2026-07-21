@@ -25,7 +25,7 @@ const firebaseConfig = {
   measurementId: "G-LK891R7MQ1"
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+
 const auth = getAuth();
 const database = getDatabase();
 

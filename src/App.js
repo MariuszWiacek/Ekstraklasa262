@@ -14,7 +14,7 @@ import History from './pages/history';
 import Stats from './pages/stats';
 import Rules from './pages/rules';
 import Loading from './components/loading';
-import 
+import SignupPage from './pages/poll';
 import pitch from './images/pitc.jpeg';
 
 function App() {

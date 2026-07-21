@@ -33,7 +33,7 @@ const Footer = () => {
                   <Link to="https://wa.me/447448952003" target="_blank">
                     <FontAwesomeIcon icon={faWhatsapp} size="2x" style={{ color: '#00ff0d' }} />
                   </Link>
-                  <a href="#">
+                  <a href="/">
                     <FontAwesomeIcon icon={faTwitter} size="2x" style={{ color: '#00ccff' }} />
                   </a>
                   <div style={mwStyle}>

@@ -4,17 +4,7 @@ import gameData from '../gameData/data.json';
 import teamsData from '../gameData/teams.json'; 
 import '../styles/results.css';
 import Pagination from '../components/Pagination'; 
-
-const groupGamesIntoKolejki = (games) => {
-  const kolejki = [];
-  for (let i = 0; i < games.length; i += 9) {
-    kolejki.push({
-      id: Math.floor(i / 9) + 1,
-      games: games.slice(i, i + 9),
-    });
-  }
-  return kolejki;
-};
+import Flag from 'react-world-flags';
 
 const Results = () => {
   const [games, setGames] = useState([]);
@@ -24,11 +14,7 @@ const Results = () => {
   
   const [itemsPerPage] = useState(9); // Number of items per page
   const totalPages = Math.ceil(gameData.length / itemsPerPage);
-
   const [currentPage, setCurrentPage] = useState(0); // Start at page 0 by default
-  const [kolejki, setKolejki] = useState(groupGamesIntoKolejki(gameData));
-  const [currentKolejkaIndex, setCurrentKolejkaIndex] = useState(0);
-  const [timeRemaining, setTimeRemaining] = useState('');
 
   useEffect(() => {
     setGames(gameData);
@@ -58,7 +44,7 @@ const Results = () => {
     const startPage = startIndex !== -1 ? Math.floor(startIndex / itemsPerPage) : 0;
     setCurrentPage(startPage);
 
-  }, [resultsInput]); // Re-run when resultsInput changes
+  }, [resultsInput, itemsPerPage]);
 
   useEffect(() => {
     const submittedDataRef = ref(getDatabase(), 'submittedData');
@@ -85,36 +71,6 @@ const Results = () => {
       setResultsInput(validResults);
       setSubmittedResults(!!data);
     });
-  }, [gameData]);
-
-  useEffect(() => {
-    const now = new Date();
-    const getNextGameIndex = () => {
-      return gameData.findIndex(game => {
-        const gameDate = new Date(`${game.date}T${game.kickoff}:00+02:00`);
-        return gameDate > now;
-      });
-    };
-
-    const nextGameIndex = getNextGameIndex();
-    const kolejkaIndex = Math.floor(nextGameIndex / 9);
-    setCurrentKolejkaIndex(kolejkaIndex);
-
-    const updateTimeRemaining = () => {
-      const nextGame = gameData[nextGameIndex];
-      if (nextGame) {
-        const kickoffTimeCEST = new Date(`${nextGame.date}T${nextGame.kickoff}:00+02:00`);
-        const diff = kickoffTimeCEST - now;
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        setTimeRemaining(`${hours}h :${minutes}min :${seconds}s`);
-      }
-    };
-
-    updateTimeRemaining();
-    const interval = setInterval(updateTimeRemaining, 1000);
-    return () => clearInterval(interval);
   }, []);
 
   const getCorrectTyp = (gameId) => {
@@ -152,12 +108,25 @@ const Results = () => {
 
   const getTeamLogo = (teamName) => {
     const team = teamsData[teamName];
-    return team ? team.logo : ''; // Default logo if not found
+    return team ? team.logo : null; 
   };
 
   const indexOfLastGame = (currentPage + 1) * itemsPerPage;
   const indexOfFirstGame = indexOfLastGame - itemsPerPage;
   const currentGames = games.slice(indexOfFirstGame, indexOfLastGame);
+
+  // Styled specification to render vector flags uniformly inside the tables
+  const flagStyle = {
+    width: '28px',
+    height: '19px',
+    verticalAlign: 'middle',
+    marginRight: '6px',
+    marginLeft: '6px',
+    display: 'inline-block',
+    borderRadius: '2px',
+    boxShadow: '0px 1px 2px rgba(0,0,0,0.2)',
+    objectFit: 'cover'
+  };
 
   return (
     <div className="fade-in" style={{ backgroundColor: '#212529ab', color: 'aliceblue', padding: '20px', textAlign: 'center', marginBottom: '10px' }}>
@@ -191,10 +160,12 @@ const Results = () => {
                       <td className="border p-2 td-mobile">{game.date} {game.kickoff}</td>
                       <td className="border p-2">
                         <div className="flex items-center justify-center gap-2 td-mobile">
-                          <img src={getTeamLogo(game.home)} alt={`${game.home} logo`} className="logo" />
+                          {/* Home Team Vector Flag */}
+                          <Flag code={getTeamLogo(game.home)} style={flagStyle} fallback={<span>🏳️ </span>} />
                           <span>{game.home}</span>
                           <span>&nbsp;-&nbsp;&nbsp;&nbsp;</span>
-                          <img src={getTeamLogo(game.away)} alt={`${game.away} logo`} className="logo" />
+                          {/* Away Team Vector Flag */}
+                          <Flag code={getTeamLogo(game.away)} style={flagStyle} fallback={<span>🏳️ </span>} />
                           <span>{game.away}</span>
                         </div>
                         <div className="flex justify-center gap-1 mt-1 small-font">
