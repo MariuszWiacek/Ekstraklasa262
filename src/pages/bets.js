@@ -108,8 +108,20 @@ const Bets = () => {
 
   const autoDetectBetType = (score) => {
     if (!score || !score.includes(':')) return '';
-    const [home, away] = score.split(':').map(Number);
+
+    const parts = score.split(':');
+
+    // Ensure both sides exist and are non-empty strings before evaluating
+    if (parts.length !== 2 || parts[0].trim() === '' || parts[1].trim() === '') {
+      return '';
+    }
+
+    const home = Number(parts[0]);
+    const away = Number(parts[1]);
+
+    // Ensure both extracted values are valid numbers
     if (isNaN(home) || isNaN(away)) return '';
+
     if (home === away) return 'X';
     return home > away ? '1' : '2';
   };
