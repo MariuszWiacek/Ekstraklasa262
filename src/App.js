@@ -25,8 +25,8 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-  // popup state
-  const [showSignup, setShowSignup] = useState(true);
+  // popup state (Set to false to disable by default)
+  const [showSignup, setShowSignup] = useState(false);
 
 
 
