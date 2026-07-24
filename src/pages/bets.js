@@ -170,7 +170,7 @@ const Bets = () => {
       .then(() => {
         setModalConfig({
           show: true,
-          
+          title: "",
           message: "Zakłady zostały pomyślnie przesłane!",
           type: "success"
         });
