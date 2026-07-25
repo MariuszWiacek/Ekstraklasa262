@@ -157,14 +157,14 @@ const Table = () => {
       const winners = sortedKolejka.filter((entry) => entry.points === maxPoints).map((entry) => entry.user);
 
       // Handle prize allocation for remis (tie)
-      const currentPrize = 10 + rolloverPrize.current;  // Use the rollover value for prize calculation
+      const currentPrize = 15 + rolloverPrize.current;  // Use the rollover value for prize calculation
 
       if (winners.length === 1) {
         prizePool[kolejkaID] = { winners, prize: currentPrize };
         rolloverPrize.current = 0; // Reset rollover for next round
       } else {
         prizePool[kolejkaID] = { winners, prize: 0, rollover: true }; // No prize for remis
-        rolloverPrize.current += 10; // Increase the rollover prize by 10 zł for next round
+        rolloverPrize.current += 15; // Increase the rollover prize by 15 zł for next round
       }
 
       // Update earnings for winners (no earnings for remis)
@@ -303,15 +303,15 @@ const Table = () => {
 
 
 <div style={earningsStyle}><hr></hr>
-  <p style={{fontSize: '15px', }}>20x60=1200 🥮
-          18 kolejek x 10 🥮 = 180 🥮
-          1200 - 180=   1020 🥮 w puli
+  <p style={{fontSize: '15px', }}>20x60=1260 🥮
+          18 kolejek x 15 🥮 = 270 🥮
+          1260 - 270 = 990 🥮 w puli
           <hr/></p>
   <div style={{ marginTop: '10px', color: '#FFD700' }}>
           
           <b>Aktualne Nagrody :</b><hr />
           {mainTableData[0] && (
-    <p>🥇 1 miejsce – <b>{mainTableData[0].user} - 550 🥮</b></p>
+    <p>🥇 1 miejsce – <b>{mainTableData[0].user} - 540 🥮</b></p>
   )}
 
   {mainTableData[1] && (
@@ -319,7 +319,7 @@ const Table = () => {
   )}
 
   {mainTableData[2] && (
-    <p>🥉 3 miejsce – <b>{mainTableData[2].user} – 170 🥮</b></p>
+    <p>🥉 3 miejsce – <b>{mainTableData[2].user} – 150 🥮</b></p>
   )}
          
         </div>
