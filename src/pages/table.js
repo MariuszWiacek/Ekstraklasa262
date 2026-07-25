@@ -64,6 +64,20 @@ const earningsStyle = {
   marginTop: '30px',
 };
 
+// Helper function to set background colors for top 3 positions
+const getRankColor = (index) => {
+  switch (index) {
+    case 0:
+      return 'rgba(255, 215, 0, 0.45)'; // Gold
+    case 1:
+      return 'rgba(192, 192, 192, 0.45)'; // Silver
+    case 2:
+      return 'rgba(205, 127, 50, 0.45)'; // Bronze
+    default:
+      return 'rgba(0, 0, 0, 0.336)'; // Default dark row
+  }
+};
+
 const Table = () => {
   const [results, setResults] = useState({});
   const [submittedData, setSubmittedData] = useState({});
@@ -208,7 +222,7 @@ const Table = () => {
                   <tr
                     key={index}
                     style={{
-                      backgroundColor: index < 3 ? '#ffea007d' : 'rgba(0, 0, 0, 0.336)',
+                      backgroundColor: getRankColor(index),
                     }}
                   >
                     <td style={tableCellStyle}>{entry.place}</td>
@@ -225,122 +239,118 @@ const Table = () => {
           <hr />
           
           {Object.keys(kolejkaTables).map((kolejkaID) => {
-  const kolejkaData = kolejkaTables[kolejkaID];
+            const kolejkaData = kolejkaTables[kolejkaID];
 
-  // Check if all users have 0 points for this kolejka
-  const allZeroPoints = kolejkaData.every((entry) => entry.points === 0);
+            // Check if all users have 0 points for this kolejka
+            const allZeroPoints = kolejkaData.every((entry) => entry.points === 0);
 
-  return (
-    <div key={kolejkaID}>
-      <hr style={{color: 'white'}} />
-      <div style={prizeInfoStyle}>
-        <h3><b>Kolejka {kolejkaID}</b><br /></h3>
-        {allZeroPoints ? (
-          <p>Nikt jeszcze nie zdobył punktów.</p> // Message for no points
-        ) : (
-          <p>
-            {prizes[kolejkaID]?.winners.length === 1 ? (
-              <>
-                <b>Zwycięzca:</b> {prizes[kolejkaID].winners.join(', ')} (
-                <b>{prizes[kolejkaID].prize} 🥮</b>)
-              </>
-            ) : (
-              <>
-                <b>Remis:</b> {prizes[kolejkaID].winners.join(', ')}. <br />
-                Nagroda kumuluje się na następną kolejkę
-              </>
-            )}
-          </p>
-        )}
-      </div>
-      
-      <div
-        style={textToggleStyle}
-        onClick={() => toggleKolejkaVisibility(kolejkaID)}
-      >
-        {visibleKolejka === kolejkaID
-          ? `Ukryj Tabelę: Kolejka ${kolejkaID}`
-          : `Pokaż Tabelę: Kolejka ${kolejkaID}`}
-      </div>
-      <hr />
-      
-      {visibleKolejka === kolejkaID && !allZeroPoints && ( // Only show table if not all users have 0 points
-        <div className="fade-in" style={{ overflowX: 'auto', marginTop: '10px' }}>
-          <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#212529', color: 'white' }}>
-                <th style={tableHeaderStyle}>Miejsce</th>
-                <th style={tableHeaderStyle}>Użytkownik</th>
-                <th style={tableHeaderStyle}>Pkt</th>
-                <th style={tableHeaderStyle}>☑️ <br />typ</th>
-                <th style={tableHeaderStyle}>✅☑️ <br />typ+wynik</th>
-              </tr>
-            </thead>
-            <tbody>
-              {kolejkaData.map((entry, index) => (
-                <tr
-                  key={index}
-                  style={{
-                    backgroundColor:
-                      index < 3 ? '#ffea007d' : 'rgba(0, 0, 0, 0.336)',
-                  }}
+            return (
+              <div key={kolejkaID}>
+                <hr style={{color: 'white'}} />
+                <div style={prizeInfoStyle}>
+                  <h3><b>Kolejka {kolejkaID}</b><br /></h3>
+                  {allZeroPoints ? (
+                    <p>Nikt jeszcze nie zdobył punktów.</p> // Message for no points
+                  ) : (
+                    <p>
+                      {prizes[kolejkaID]?.winners.length === 1 ? (
+                        <>
+                          <b>Zwycięzca:</b> {prizes[kolejkaID].winners.join(', ')} (
+                          <b>{prizes[kolejkaID].prize} 🥮</b>)
+                        </>
+                      ) : (
+                        <>
+                          <b>Remis:</b> {prizes[kolejkaID].winners.join(', ')}. <br />
+                          Nagroda kumuluje się na następną kolejkę
+                        </>
+                      )}
+                    </p>
+                  )}
+                </div>
+                
+                <div
+                  style={textToggleStyle}
+                  onClick={() => toggleKolejkaVisibility(kolejkaID)}
                 >
-                  <td style={tableCellStyle}>{entry.place}</td>
-                  <td style={tableCellStyle}>{entry.user}</td>
-                  <td style={tableCellStyle}>{entry.points}</td>
-                  <td style={tableCellStyle}>{entry.correctTypes}</td>
-                  <td style={tableCellStyle}>{entry.correctResults}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-})}
+                  {visibleKolejka === kolejkaID
+                    ? `Ukryj Tabelę: Kolejka ${kolejkaID}`
+                    : `Pokaż Tabelę: Kolejka ${kolejkaID}`}
+                </div>
+                <hr />
+                
+                {visibleKolejka === kolejkaID && !allZeroPoints && ( // Only show table if not all users have 0 points
+                  <div className="fade-in" style={{ overflowX: 'auto', marginTop: '10px' }}>
+                    <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#212529', color: 'white' }}>
+                          <th style={tableHeaderStyle}>Miejsce</th>
+                          <th style={tableHeaderStyle}>Użytkownik</th>
+                          <th style={tableHeaderStyle}>Pkt</th>
+                          <th style={tableHeaderStyle}>☑️ <br />typ</th>
+                          <th style={tableHeaderStyle}>✅☑️ <br />typ+wynik</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {kolejkaData.map((entry, index) => (
+                          <tr
+                            key={index}
+                            style={{
+                              backgroundColor: getRankColor(index),
+                            }}
+                          >
+                            <td style={tableCellStyle}>{entry.place}</td>
+                            <td style={tableCellStyle}>{entry.user}</td>
+                            <td style={tableCellStyle}>{entry.points}</td>
+                            <td style={tableCellStyle}>{entry.correctTypes}</td>
+                            <td style={tableCellStyle}>{entry.correctResults}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
+          <div style={earningsStyle}><hr></hr>
+            <p style={{fontSize: '15px', }}>
+              20x60=1260 🥮
+              18 kolejek x 15 🥮 = 270 🥮
+              1260 - 270 = 990 🥮 w puli
+              <hr/>
+            </p>
+            <div style={{ marginTop: '10px', color: '#FFD700' }}>
+              <b>Aktualne Nagrody :</b><hr />
+              {mainTableData[0] && (
+                <p>🥇 1 miejsce – <b>{mainTableData[0].user} - 540 🥮</b></p>
+              )}
 
+              {mainTableData[1] && (
+                <p>🥈 2 miejsce – <b>{mainTableData[1].user} – 300 🥮</b></p>
+              )}
 
-<div style={earningsStyle}><hr></hr>
-  <p style={{fontSize: '15px', }}>20x60=1260 🥮
-          18 kolejek x 15 🥮 = 270 🥮
-          1260 - 270 = 990 🥮 w puli
-          <hr/></p>
-  <div style={{ marginTop: '10px', color: '#FFD700' }}>
-          
-          <b>Aktualne Nagrody :</b><hr />
-          {mainTableData[0] && (
-    <p>🥇 1 miejsce – <b>{mainTableData[0].user} - 540 🥮</b></p>
-  )}
-
-  {mainTableData[1] && (
-    <p>🥈 2 miejsce – <b>{mainTableData[1].user} – 300 🥮</b></p>
-  )}
-
-  {mainTableData[2] && (
-    <p>🥉 3 miejsce – <b>{mainTableData[2].user} – 150 🥮</b></p>
-  )}
-         
-        </div>
-  <hr />
- <div style={{ marginTop: '10px', color: '#FFD700' }}>
-          
-          <b>Bonusy kolejkowe :<hr></hr></b>
-  {Object.entries(userEarnings)
-    .filter(([, earningsAmount]) => earningsAmount > 0) // Filter out users with 0 earnings
-    .sort(([, earningsA], [, earningsB]) => earningsB - earningsA) // Sort by earnings in descending order
-    .map(([user, earningsAmount]) => (
-      <p key={user}>
-        {user}: {earningsAmount} 🥮
-      </p>
-              ))}</div>
+              {mainTableData[2] && (
+                <p>🥉 3 miejsce – <b>{mainTableData[2].user} – 150 🥮</b></p>
+              )}
+            </div>
+            <hr />
+            <div style={{ marginTop: '10px', color: '#FFD700' }}>
+              <b>Bonusy kolejkowe :<hr></hr></b>
+              {Object.entries(userEarnings)
+                .filter(([, earningsAmount]) => earningsAmount > 0) // Filter out users with 0 earnings
+                .sort(([, earningsA], [, earningsB]) => earningsB - earningsA) // Sort by earnings in descending order
+                .map(([user, earningsAmount]) => (
+                  <p key={user}>
+                    {user}: {earningsAmount} 🥮
+                  </p>
+                ))}
+            </div>
           </div>
         </Col>
       </Row><hr style={{color: 'white'}}></hr>
       <Stats />
     </Container>
-    
   );
 };
 
