@@ -315,19 +315,19 @@ const Table = () => {
 
           <div style={earningsStyle}><hr></hr>
             <p style={{fontSize: '15px', }}>
-              20x60=1260 🥮
+              22x60=1320 🥮
               18 kolejek x 15 🥮 = 270 🥮
-              1260 - 270 = 990 🥮 w puli
+              1320 - 270 = 1050 🥮 w puli
               <hr/>
             </p>
             <div style={{ marginTop: '10px', color: '#FFD700' }}>
               <b>Aktualne Nagrody :</b><hr />
               {mainTableData[0] && (
-                <p>🥇 1 miejsce – <b>{mainTableData[0].user} - 540 🥮</b></p>
+                <p>🥇 1 miejsce – <b>{mainTableData[0].user} - 550 🥮</b></p>
               )}
 
               {mainTableData[1] && (
-                <p>🥈 2 miejsce – <b>{mainTableData[1].user} – 300 🥮</b></p>
+                <p>🥈 2 miejsce – <b>{mainTableData[1].user} – 350 🥮</b></p>
               )}
 
               {mainTableData[2] && (
