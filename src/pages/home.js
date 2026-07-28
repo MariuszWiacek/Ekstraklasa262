@@ -11,7 +11,7 @@ const Home = () => {
     return (
         <div className="fade-in">
             <h1 style={welcomeMessageStyle}>
-                Typer LIGI POLSKIEJ - Wiosna 2026
+                Typer LIGI POLSKIEJ - Jesień 2026
             </h1>
 
             {/* 🔥 Install Button (top placement) */}
