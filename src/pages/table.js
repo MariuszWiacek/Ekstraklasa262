@@ -78,6 +78,33 @@ const getRankColor = (index) => {
   }
 };
 
+// Helper function to compare two entries for tie-breaking
+const compareEntries = (a, b) => {
+  if (b.points !== a.points) return b.points - a.points;
+  if (b.correctResults !== a.correctResults) return b.correctResults - a.correctResults;
+  return b.correctTypes - a.correctTypes;
+};
+
+// Helper function to assign places with ties
+const assignPlaces = (data) => {
+  data.forEach((entry, index) => {
+    if (index === 0) {
+      entry.place = 1;
+    } else {
+      const prev = data[index - 1];
+      if (
+        entry.points === prev.points &&
+        entry.correctResults === prev.correctResults &&
+        entry.correctTypes === prev.correctTypes
+      ) {
+        entry.place = prev.place; // Ten sam wynik = to samo miejsce
+      } else {
+        entry.place = index + 1;
+      }
+    }
+  });
+};
+
 const Table = () => {
   const [results, setResults] = useState({});
   const [submittedData, setSubmittedData] = useState({});
@@ -87,7 +114,7 @@ const Table = () => {
   const [prizes, setPrizes] = useState({});
   const [userEarnings, setUserEarnings] = useState({});
   const previousTableData = useRef([]);
-  const rolloverPrize = useRef(0);  // Use ref to track the rollover prize across renders
+  const rolloverPrize = useRef(0); // Use ref to track the rollover prize across renders
 
   useEffect(() => {
     const resultsRef = ref(database, 'results');
@@ -128,15 +155,14 @@ const Table = () => {
       return { user, points, correctTypes, correctResults };
     });
 
-    // Sort overall table
-    overallTableData.sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      return b.correctResults - a.correctResults;
-    });
+    // Sort overall table (points -> correctResults -> correctTypes)
+    overallTableData.sort(compareEntries);
 
-    // Assign place and trends for overall table
-    overallTableData.forEach((entry, index) => {
-      entry.place = index + 1;
+    // Assign place taking ties into account
+    assignPlaces(overallTableData);
+
+    // Calculate trends
+    overallTableData.forEach((entry) => {
       const previousEntry = previousTableData.current.find((e) => e.user === entry.user);
       entry.trend = previousEntry
         ? previousEntry.place > entry.place
@@ -156,22 +182,17 @@ const Table = () => {
     let earnings = {};
 
     Object.keys(kolejkaPoints).forEach((kolejkaID) => {
-      const sortedKolejka = Object.values(kolejkaPoints[kolejkaID]).sort((a, b) => {
-        if (b.points !== a.points) return b.points - a.points;
-        return b.correctResults - a.correctResults;
-      });
+      const sortedKolejka = Object.values(kolejkaPoints[kolejkaID]).sort(compareEntries);
 
       // Assign place
-      sortedKolejka.forEach((entry, index) => {
-        entry.place = index + 1;
-      });
+      assignPlaces(sortedKolejka);
 
-      // Find winners
-      const maxPoints = sortedKolejka[0]?.points || 0;
-      const winners = sortedKolejka.filter((entry) => entry.points === maxPoints).map((entry) => entry.user);
+      // Find winners (highest overall rank in kolejka based on tiebreakers)
+      const topPlace = sortedKolejka[0]?.place;
+      const winners = sortedKolejka.filter((entry) => entry.place === topPlace).map((entry) => entry.user);
 
       // Handle prize allocation for remis (tie)
-      const currentPrize = 15 + rolloverPrize.current;  // Use the rollover value for prize calculation
+      const currentPrize = 15 + rolloverPrize.current; // Use the rollover value for prize calculation
 
       if (winners.length === 1) {
         prizePool[kolejkaID] = { winners, prize: currentPrize };
