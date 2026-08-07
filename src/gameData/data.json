@@ -205,7 +205,7 @@
     "away": "Wieczysta",
     "kickoff": null,
     "date": "2026-00-00 Mecz przełożony"
-    "disabled": true
+    "disabled": false
   },
   {
     "id": 24,
@@ -241,6 +241,6 @@
     "away": "Zagłębie",
     "kickoff": null,
     "date": "2026-00-00 Mecz przełożony"
-    "disabled": true
+    "disabled": false
   }
 ]
