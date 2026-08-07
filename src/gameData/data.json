@@ -204,7 +204,7 @@
     "home": "GKS",
     "away": "Wieczysta",
     "kickoff": null,
-    "date": null,
+    "date": "2026-00-00 Mecz przełożony"
     "disabled": true
   },
   {
@@ -240,7 +240,7 @@
     "home": "Raków",
     "away": "Zagłębie",
     "kickoff": null,
-    "date": null,
+    "date": "2026-00-00 Mecz przełożony"
     "disabled": true
   }
 ]
