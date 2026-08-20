@@ -395,8 +395,8 @@
     "kolejkaId": 5,
     "home": "Lech",
     "away": "Jagiellonia",
-    "kickoff": null,
-    "date": "2026-00-00 - mecz przełożony",
+    "kickoff": "20:30",
+    "date": "2026-09-03",
     "disabled": false
   },
   {
@@ -404,8 +404,8 @@
     "kolejkaId": 5,
     "home": "Raków",
     "away": "Górnik",
-    "kickoff": null,
-    "date": "2026-00-00 - mecz przełożony",
+    "kickoff": "18:00",
+    "date": "2026-09-03",
     "disabled": false
   },
   {
