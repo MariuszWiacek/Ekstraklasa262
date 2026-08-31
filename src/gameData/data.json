@@ -396,7 +396,7 @@
     "home": "Lech",
     "away": "Jagiellonia",
     "kickoff": "20:30",
-    "date": "2026-00-00",
+    "date": "2026-09-03",
     "disabled": false
   },
   {
@@ -405,7 +405,7 @@
     "home": "Raków",
     "away": "Górnik",
     "kickoff": "18:00",
-    "date": "2026-00-00",
+    "date": "2026-09-03",
     "disabled": false
   },
   {
@@ -488,5 +488,333 @@
     "kickoff": "20:15",
     "date": "2026-08-30",
     "disabled": false
+  },
+
+
+  {
+    "id": 55,
+    "kolejkaId": 7,
+    "home": "Piast Gliwice",
+    "away": "GKS Katowice",
+    "kickoff": "20:30",
+    "date": "2026-09-04",
+    "disabled": false
+  },
+  {
+    "id": 56,
+    "kolejkaId": 7,
+    "home": "Widzew Łódź",
+    "away": "Radomiak Radom",
+    "kickoff": "14:45",
+    "date": "2026-09-05",
+    "disabled": false
+  },
+  {
+    "id": 57,
+    "kolejkaId": 7,
+    "home": "Korona Kielce",
+    "away": "Wisła Kraków",
+    "kickoff": "17:30",
+    "date": "2026-09-05",
+    "disabled": false
+  },
+  {
+    "id": 58,
+    "kolejkaId": 7,
+    "home": "Motor Lublin",
+    "away": "Legia Warszawa",
+    "kickoff": "20:15",
+    "date": "2026-09-05",
+    "disabled": false
+  },
+  {
+    "id": 59,
+    "kolejkaId": 7,
+    "home": "Cracovia",
+    "away": "Górnik Zabrze",
+    "kickoff": "14:45",
+    "date": "2026-09-06",
+    "disabled": false
+  },
+  {
+    "id": 60,
+    "kolejkaId": 7,
+    "home": "Lech Poznań",
+    "away": "Raków Częstochowa",
+    "kickoff": "17:30",
+    "date": "2026-09-06",
+    "disabled": false
+  },
+  {
+    "id": 61,
+    "kolejkaId": 7,
+    "home": "Jagiellonia Białystok",
+    "away": "Śląsk Wrocław",
+    "kickoff": "20:15",
+    "date": "2026-09-06",
+    "disabled": false
+  },
+  {
+    "id": 62,
+    "kolejkaId": 7,
+    "home": "Wieczysta Kraków",
+    "away": "Zagłębie Lubin",
+    "kickoff": "18:00",
+    "date": "2026-09-07",
+    "disabled": false
+  },
+  {
+    "id": 63,
+    "kolejkaId": 7,
+    "home": "Pogoń Szczecin",
+    "away": "Wisła Płock",
+    "kickoff": "20:30",
+    "date": "2026-09-07",
+    "disabled": false
+  },
+  {
+    "id": 64,
+    "kolejkaId": 8,
+    "home": "Raków Częstochowa",
+    "away": "Motor Lublin",
+    "kickoff": "18:00",
+    "date": "2026-09-11",
+    "disabled": false
+  },
+  {
+    "id": 65,
+    "kolejkaId": 8,
+    "home": "Wisła Kraków",
+    "away": "Jagiellonia Białystok",
+    "kickoff": "20:30",
+    "date": "2026-09-11",
+    "disabled": false
+  },
+  {
+    "id": 66,
+    "kolejkaId": 8,
+    "home": "Śląsk Wrocław",
+    "away": "Korona Kielce",
+    "kickoff": "14:45",
+    "date": "2026-09-12",
+    "disabled": false
+  },
+  {
+    "id": 67,
+    "kolejkaId": 8,
+    "home": "Górnik Zabrze",
+    "away": "Lech Poznań",
+    "kickoff": "17:30",
+    "date": "2026-09-12",
+    "disabled": false
+  },
+  {
+    "id": 68,
+    "kolejkaId": 8,
+    "home": "Zagłębie Lubin",
+    "away": "GKS Katowice",
+    "kickoff": "20:15",
+    "date": "2026-09-12",
+    "disabled": false
+  },
+  {
+    "id": 69,
+    "kolejkaId": 8,
+    "home": "Wisła Płock",
+    "away": "Cracovia",
+    "kickoff": "12:15",
+    "date": "2026-09-13",
+    "disabled": false
+  },
+  {
+    "id": 70,
+    "kolejkaId": 8,
+    "home": "Pogoń Szczecin",
+    "away": "Wieczysta Kraków",
+    "kickoff": "14:45",
+    "date": "2026-09-13",
+    "disabled": false
+  },
+  {
+    "id": 71,
+    "kolejkaId": 8,
+    "home": "Legia Warszawa",
+    "away": "Widzew Łódź",
+    "kickoff": "17:30",
+    "date": "2026-09-13",
+    "disabled": false
+  },
+  {
+    "id": 72,
+    "kolejkaId": 8,
+    "home": "Radomiak Radom",
+    "away": "Piast Gliwice",
+    "kickoff": "19:00",
+    "date": "2026-09-14",
+    "disabled": false
+  },
+  {
+    "id": 73,
+    "kolejkaId": 9,
+    "home": "Widzew Łódź",
+    "away": "Wieczysta Kraków",
+    "kickoff": "18:00",
+    "date": "2026-09-18",
+    "disabled": false
+  },
+  {
+    "id": 74,
+    "kolejkaId": 9,
+    "home": "Wisła Kraków",
+    "away": "Śląsk Wrocław",
+    "kickoff": "20:30",
+    "date": "2026-09-18",
+    "disabled": false
+  },
+  {
+    "id": 75,
+    "kolejkaId": 9,
+    "home": "Korona Kielce",
+    "away": "Raków Częstochowa",
+    "kickoff": "14:45",
+    "date": "2026-09-19",
+    "disabled": false
+  },
+  {
+    "id": 76,
+    "kolejkaId": 9,
+    "home": "GKS Katowice",
+    "away": "Cracovia",
+    "kickoff": "17:30",
+    "date": "2026-09-19",
+    "disabled": false
+  },
+  {
+    "id": 77,
+    "kolejkaId": 9,
+    "home": "Motor Lublin",
+    "away": "Górnik Zabrze",
+    "kickoff": "20:15",
+    "date": "2026-09-19",
+    "disabled": false
+  },
+  {
+    "id": 78,
+    "kolejkaId": 9,
+    "home": "Piast Gliwice",
+    "away": "Pogoń Szczecin",
+    "kickoff": "12:15",
+    "date": "2026-09-20",
+    "disabled": false
+  },
+  {
+    "id": 79,
+    "kolejkaId": 9,
+    "home": "Zagłębie Lubin",
+    "away": "Wisła Płock",
+    "kickoff": "14:45",
+    "date": "2026-09-20",
+    "disabled": false
+  },
+  {
+    "id": 80,
+    "kolejkaId": 9,
+    "home": "Jagiellonia Białystok",
+    "away": "Legia Warszawa",
+    "kickoff": "17:30",
+    "date": "2026-09-20",
+    "disabled": false
+  },
+  {
+    "id": 81,
+    "kolejkaId": 9,
+    "home": "Lech Poznań",
+    "away": "Radomiak Radom",
+    "kickoff": "20:15",
+    "date": "2026-09-20",
+    "disabled": false
+  },
+  {
+    "id": 82,
+    "kolejkaId": 10,
+    "home": "Wieczysta Kraków",
+    "away": "Wisła Płock",
+    "kickoff": "18:00",
+    "date": "2026-10-09",
+    "disabled": false
+  },
+  {
+    "id": 83,
+    "kolejkaId": 10,
+    "home": "Raków Częstochowa",
+    "away": "GKS Katowice",
+    "kickoff": "20:30",
+    "date": "2026-10-09",
+    "disabled": false
+  },
+  {
+    "id": 84,
+    "kolejkaId": 10,
+    "home": "Cracovia",
+    "away": "Zagłębie Lubin",
+    "kickoff": "14:45",
+    "date": "2026-10-10",
+    "disabled": false
+  },
+  {
+    "id": 85,
+    "kolejkaId": 10,
+    "home": "Śląsk Wrocław",
+    "away": "Lech Poznań",
+    "kickoff": "17:30",
+    "date": "2026-10-10",
+    "disabled": false
+  },
+  {
+    "id": 86,
+    "kolejkaId": 10,
+    "home": "Jagiellonia Białystok",
+    "away": "Górnik Zabrze",
+    "kickoff": "20:15",
+    "date": "2026-10-10",
+    "disabled": false
+  },
+  {
+    "id": 87,
+    "kolejkaId": 10,
+    "home": "Piast Gliwice",
+    "away": "Widzew Łódź",
+    "kickoff": "14:45",
+    "date": "2026-10-11",
+    "disabled": false
+  },
+  {
+    "id": 88,
+    "kolejkaId": 10,
+    "home": "Pogoń Szczecin",
+    "away": "Korona Kielce",
+    "kickoff": "17:30",
+    "date": "2026-10-11",
+    "disabled": false
+  },
+  {
+    "id": 89,
+    "kolejkaId": 10,
+    "home": "Legia Warszawa",
+    "away": "Wisła Kraków",
+    "kickoff": "20:15",
+    "date": "2026-10-11",
+    "disabled": false
+  },
+  {
+    "id": 90,
+    "kolejkaId": 10,
+    "home": "Radomiak Radom",
+    "away": "Motor Lublin",
+    "kickoff": "18:00",
+    "date": "2026-10-12",
+    "disabled": false
   }
+]
+
 ]
