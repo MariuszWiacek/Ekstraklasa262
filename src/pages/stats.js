@@ -215,6 +215,14 @@ const Stats = () => {
       });
     });
 
+    // Calculate Top 1 and Top 2 distinct counts for empty bets
+    const emptyRanks = [...new Set(rawProfiles.map(p => p.emptyBets))]
+      .filter(count => count > 0)
+      .sort((a, b) => b - a);
+
+    const top1EmptyCount = emptyRanks[0] || null;
+    const top2EmptyCount = emptyRanks[1] || null;
+
     const usedVerdicts = new Set();
 
     const output = rawProfiles.map(p => {
@@ -236,11 +244,11 @@ const Stats = () => {
       }
 
       let basket = "braz";
-      if (p.emptyBets > 15 || OVR < 40){
+      if (p.emptyBets > 15 || OVR < 35){
         basket = "mul"; 
       } else if (OVR >= 55) { 
         basket = "zloto";
-      } else if (OVR >= 48) { 
+      } else if (OVR >= 45) { 
         basket = "srebro";
       } else {
         basket = "braz"; 
@@ -249,63 +257,71 @@ const Stats = () => {
       let style = "";
       let verdict = "";
       
-      if (p.scoreCorrect === absoluteMaxExactScores && p.scoreCorrect > 0 && OVR >= 48) {
-  if (!usedVerdicts.has("Chirurg Wyników (Snajper)")) {
-    style = "Chirurg Wyników (Snajper)";
-    verdict = `Niewiarygodne! Masz najwięcej idealnie trafionych wyników w lidze (${p.scoreCorrect}). Podczas gdy reszta bawi się w drobne, Ty wjeżdżasz z buta i kasujesz pakiety po 3 punkty. Strach z Tobą grać.`;
-    usedVerdicts.add(style);
-  } else if (!usedVerdicts.has("Jasnowidz z Krainy Deszczowców")) {
-    style = "Jasnowidz z Krainy Deszczowców";
-    verdict = `Jak Ty to robisz?! ${p.scoreCorrect} razy trafić idealny wynik meczu to nie jest przypadek – to jest albo pakt z diabłem, albo nielegalny dostęp do scenariusza FIFA. Reszta tabeli patrzy na Twoje "trójeczki" z czystą zazdrością.`;
-    usedVerdicts.add(style);
-  } else if (!usedVerdicts.has("Precyzyjny Typer (Laser)")) {
-    style = "Precyzyjny Typer (Laser)";
-    verdict = `Twoje typy wchodzą z dokładnością do milimetra. Masz na koncie aż ${p.scoreCorrect} dokładnych wyników! Gdy inni drżą o końcowy gwizdek, Ty spokojnie dopisujesz 3 punkty, bo przecież zaplanowałeś to przed turniejem.`;
-    usedVerdicts.add(style);
-  } else if (!usedVerdicts.has("Kat Księgowych (3 Pkt Export)")) {
-    style = "Kat Księgowych (3 Pkt Export)";
-    verdict = `Dla Ciebie liczą się tylko pełne pakiety. Zamiast zbierać ochłapy po jednym punkcie, hurtowo windujesz się w tabeli dzięki ${p.scoreCorrect} dokładnym trafieniom. Bezlitosna skuteczność, która rujnuje psychikę Twoich rywali.`;
-    usedVerdicts.add(style);
-  }
-}
-else if (p.outcomeCorrect === absoluteMaxOutcomeCorrect && p.outcomeCorrect > 0 && OVR >= 48) {
-  if (!usedVerdicts.has("Analityk Trendów (Mózg Ligi)")) {
-    style = "Analityk Trendów (Mózg Ligi)";
-    verdict = `Twoje wyczucie boiskowych intencji jest przerażające. Masz najwięcej bezbłędnie wytypowanych tendencji (${p.outcomeCorrect}). Twój wewnętrzny algorytm rzadko kiedy się myli!`;
-    usedVerdicts.add(style);
-  } else if (!usedVerdicts.has("Główny Geodeta Tabeli")) {
-    style = "Główny Geodeta Tabeli";
-    verdict = `Ty nie zgadujesz, Ty to po prostu kalkulujesz. Masz na koncie najwięcej trafionych kierunków meczów (${p.outcomeCorrect}). Perfekcyjnie czytasz, kto ma przewagę psychiczną, a kto pęknie na boisku.`;
-    usedVerdicts.add(style);
-  } else if (!usedVerdicts.has("Makler Giełdy Mundialowej")) {
-    style = "Makler Giełdy Mundialowej";
-    verdict = `Rzadko kiedy dajesz się nabrać na niespodzianki. Bez błędu przewidujesz kierunki, w których pójdą mecze (${p.outcomeCorrect} trafionych tendencji). Twoja stabilność punktowa wykańcza nerwowo goniący Cię peleton.`;
-    usedVerdicts.add(style);
-  } else if (!usedVerdicts.has("Profesor Przewidywania (1X2)")) {
-    style = "Profesor Przewidywania (1X2)";
-    verdict = `Książkowa robota! Twoja skuteczność w wyznaczaniu zwycięzców i remisów to absolutny top ligi (${p.outcomeCorrect} razy wskazany właściwy rozstrzygnięcie). Piłkarze grają dokładnie tak, jak im dyktujesz w kuponie.`;
-    usedVerdicts.add(style);
-  }
-}
-else if (p.drawBetsCorrect === absoluteMaxDrawsCorrect && p.drawBetsCorrect > 0) {
-  if (!usedVerdicts.has("Oficjalny Król Remisów")) {
-    style = "Oficjalny Król Remisów";
-    verdict = `Podczas gdy cała liga ślepo stawia na faworytów, Ty ze stoickim spokojem namierzasz nudne mecze bez rozstrzygnięcia. Twój nos do 'iksów' ratuje Ci skórę w tabeli.`;
-    usedVerdicts.add(style);
-  } else if (!usedVerdicts.has("Saper z Pola Karnego")) {
-    style = "Saper z Pola Karnego";
-    verdict = `Trafianie remisów to wyższa szkoła jazdy, a Ty robisz to taśmowo (${p.drawBetsCorrect} trafionych 'iksów'). Masz stalowe nerwy, żeby stawiać na brak rozstrzygnięcia tam, gdzie inni bezmyślnie szukają zwycięzcy.`;
-    usedVerdicts.add(style);
-  } else if (!usedVerdicts.has("Ambasador Pokoju i Podziału Punktów")) {
-    style = "Ambasador Pokoju i Podziału Punktów";
-    verdict = `Gdy na boisku wieje nudą, Ty otwierasz szampana. Masz najlepsze oko do remisów w tej lidze (${p.drawBetsCorrect}). Ty i sędziowie kończący mecze przed dogrywką nadajecie na tych samych falach.`;
-    usedVerdicts.add(style);
-  } else if (!usedVerdicts.has("Generał Dywizji X")) {
-    style = "Generał Dywizji X";
-    verdict = `Złapać remis to sztuka, ale zgarnąć ich aż tyle (${p.drawBetsCorrect}) to absolutna dominacja taktyczna. Twoje zamiłowanie do remisów sprawia, że jesteś najbardziej nieprzewidywalnym i niebezpiecznym graczem w stawce.`;
-    usedVerdicts.add(style);
-  }
-}
+      // Top 1 & Top 2 Empty Bettors Handlers
+      if (p.emptyBets > 0 && p.emptyBets === top1EmptyCount) {
+        style = "Rozwiązany Kontrakt za Porozumieniem Stron";
+        verdict = `Aż ${p.emptyBets} meczów rozegranych bez Twojego udziału. Wygląda na to, że wszedłeś w ten turniej jak klasyczny ekstraklasowy weteran – kontrakt podpisany, premia wzięta, a na sam mecz to już nie bardzo było po drodze wstać z ławki.`;
+      } else if (p.emptyBets > 0 && p.emptyBets === top2EmptyCount) {
+        style = "Wypadnięcie z Rotacji Meczowej";
+        verdict = `Z wynikiem ${p.emptyBets} pustych przelotów depczesz liderowi po piętach. Zabrakło sił na maraton spotkań, czy po prostu nie dojechał autobus z typami?`;
+      }
+      else if (p.scoreCorrect === absoluteMaxExactScores && p.scoreCorrect > 0 && OVR >= 48) {
+        if (!usedVerdicts.has("Chirurg Wyników (Snajper)")) {
+          style = "Chirurg Wyników (Snajper)";
+          verdict = `Niewiarygodne! Masz najwięcej idealnie trafionych wyników w lidze (${p.scoreCorrect}). Podczas gdy reszta bawi się w drobne, Ty wjeżdżasz z buta i kasujesz pakiety po 3 punkty. Strach z Tobą grać.`;
+          usedVerdicts.add(style);
+        } else if (!usedVerdicts.has("Jasnowidz z Krainy Deszczowców")) {
+          style = "Jasnowidz z Krainy Deszczowców";
+          verdict = `Jak Ty to robisz?! ${p.scoreCorrect} razy trafić idealny wynik meczu to nie jest przypadek – to jest albo pakt z diabłem, albo nielegalny dostęp do scenariusza FIFA. Reszta tabeli patrzy na Twoje "trójeczki" z czystą zazdrością.`;
+          usedVerdicts.add(style);
+        } else if (!usedVerdicts.has("Precyzyjny Typer (Laser)")) {
+          style = "Precyzyjny Typer (Laser)";
+          verdict = `Twoje typy wchodzą z dokładnością do milimetra. Masz na koncie aż ${p.scoreCorrect} dokładnych wyników! Gdy inni drżą o końcowy gwizdek, Ty spokojnie dopisujesz 3 punkty, bo przecież zaplanowałeś to przed turniejem.`;
+          usedVerdicts.add(style);
+        } else if (!usedVerdicts.has("Kat Księgowych (3 Pkt Export)")) {
+          style = "Kat Księgowych (3 Pkt Export)";
+          verdict = `Dla Ciebie liczą się tylko pełne pakiety. Zamiast zbierać ochłapy po jednym punkcie, hurtowo windujesz się w tabeli dzięki ${p.scoreCorrect} dokładnym trafieniom. Bezlitosna skuteczność, która rujnuje psychikę Twoich rywali.`;
+          usedVerdicts.add(style);
+        }
+      }
+      else if (p.outcomeCorrect === absoluteMaxOutcomeCorrect && p.outcomeCorrect > 0 && OVR >= 48) {
+        if (!usedVerdicts.has("Analityk Trendów (Mózg Ligi)")) {
+          style = "Analityk Trendów (Mózg Ligi)";
+          verdict = `Twoje wyczucie boiskowych intencji jest przerażające. Masz najwięcej bezbłędnie wytypowanych tendencji (${p.outcomeCorrect}). Twój wewnętrzny algorytm rzadko kiedy się myli!`;
+          usedVerdicts.add(style);
+        } else if (!usedVerdicts.has("Główny Geodeta Tabeli")) {
+          style = "Główny Geodeta Tabeli";
+          verdict = `Ty nie zgadujesz, Ty to po prostu kalkulujesz. Masz na koncie najwięcej trafionych kierunków meczów (${p.outcomeCorrect}). Perfekcyjnie czytasz, kto ma przewagę psychiczną, a kto pęknie na boisku.`;
+          usedVerdicts.add(style);
+        } else if (!usedVerdicts.has("Makler Giełdy Mundialowej")) {
+          style = "Makler Giełdy Mundialowej";
+          verdict = `Rzadko kiedy dajesz się nabrać na niespodzianki. Bez błędu przewidujesz kierunki, w których pójdą mecze (${p.outcomeCorrect} trafionych tendencji). Twoja stabilność punktowa wykańcza nerwowo goniący Cię peleton.`;
+          usedVerdicts.add(style);
+        } else if (!usedVerdicts.has("Profesor Przewidywania (1X2)")) {
+          style = "Profesor Przewidywania (1X2)";
+          verdict = `Książkowa robota! Twoja skuteczność w wyznaczaniu zwycięzców i remisów to absolutny top ligi (${p.outcomeCorrect} razy wskazany właściwy rozstrzygnięcie). Piłkarze grają dokładnie tak, jak im dyktujesz w kuponie.`;
+          usedVerdicts.add(style);
+        }
+      }
+      else if (p.drawBetsCorrect === absoluteMaxDrawsCorrect && p.drawBetsCorrect > 0) {
+        if (!usedVerdicts.has("Oficjalny Król Remisów")) {
+          style = "Oficjalny Król Remisów";
+          verdict = `Podczas gdy cała liga ślepo stawia na faworytów, Ty ze stoickim spokojem namierzasz nudne mecze bez rozstrzygnięcia. Twój nos do 'iksów' ratuje Ci skórę w tabeli.`;
+          usedVerdicts.add(style);
+        } else if (!usedVerdicts.has("Saper z Pola Karnego")) {
+          style = "Saper z Pola Karnego";
+          verdict = `Trafianie remisów to wyższa szkoła jazdy, a Ty robisz to taśmowo (${p.drawBetsCorrect} trafionych 'iksów'). Masz stalowe nerwy, żeby stawiać na brak rozstrzygnięcia tam, gdzie inni bezmyślnie szukają zwycięzcy.`;
+          usedVerdicts.add(style);
+        } else if (!usedVerdicts.has("Ambasador Pokoju i Podziału Punktów")) {
+          style = "Ambasador Pokoju i Podziału Punktów";
+          verdict = `Gdy na boisku wieje nudą, Ty otwierasz szampana. Masz najlepsze oko do remisów w tej lidze (${p.drawBetsCorrect}). Ty i sędziowie kończący mecze przed dogrywką nadajecie na tych samych falach.`;
+          usedVerdicts.add(style);
+        } else if (!usedVerdicts.has("Generał Dywizji X")) {
+          style = "Generał Dywizji X";
+          verdict = `Złapać remis to sztuka, ale zgarnąć ich aż tyle (${p.drawBetsCorrect}) to absolutna dominacja taktyczna. Twoje zamiłowanie do remisów sprawia, że jesteś najbardziej nieprzewidywalnym i niebezpiecznym graczem w stawce.`;
+          usedVerdicts.add(style);
+        }
+      }
       else {
         const currentPool = VERDICTS_BANK[basket];
         const stableSeed = getStableSeed(p.user) + p.calculatedPoints;
