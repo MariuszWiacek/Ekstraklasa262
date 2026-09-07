@@ -3,7 +3,7 @@ import { getDatabase, ref, onValue, update } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 import { initializeApp, getApps } from 'firebase/app';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faLock, faLockOpen, faCheckCircle, faShieldAlt } from '@fortawesome/free-solid-svg-icons';
 import { DateTime } from 'luxon';
 
 import usersData from '../gameData/users.json';
@@ -118,7 +118,7 @@ const Bets = () => {
     setModalConfig({
       show: true,
       title: "Zmiana Profilu",
-      message: `Czy na pewno chcesz odblokować profil dla gracza ${selectedUser} i zmienić użytkownika na tym urządzeniu?`,
+      message: `Czy na pewno chcesz odblokować profil gracza ${selectedUser} i zmienić konto na tym urządzeniu?`,
       type: "confirm",
       isConfirm: true,
       onConfirm: () => {
@@ -141,16 +141,11 @@ const Bets = () => {
 
   const autoDetectBetType = (score) => {
     if (!score || !score.includes(':')) return '';
-
     const parts = score.split(':');
-
-    if (parts.length !== 2 || parts[0].trim() === '' || parts[1].trim() === '') {
-      return '';
-    }
+    if (parts.length !== 2 || parts[0].trim() === '' || parts[1].trim() === '') return '';
 
     const home = Number(parts[0]);
     const away = Number(parts[1]);
-
     if (isNaN(home) || isNaN(away)) return '';
 
     if (home === away) return 'X';
@@ -175,7 +170,7 @@ const Bets = () => {
     if (!selectedUser) {
       setModalConfig({
         show: true,
-        title: "Brak użytkownika",
+        title: "Wybierz profil",
         message: "Proszę wybrać użytkownika przed wysłaniem zakładów.",
         type: "info",
         isConfirm: false
@@ -203,8 +198,8 @@ const Bets = () => {
     if (Object.keys(newBetsToSubmit).length === 0) {
       setModalConfig({
         show: true,
-        title: `Hej, ${selectedUser}!`,
-        message: "Wszystkie Twoje zakłady w tej kolejce zostały już wcześniej przesłane.",
+        title: `Hej, ${selectedUser}`,
+        message: "Wszystkie Twoje zakłady w tej kolejce zostały już pomyślnie zapisane.",
         type: "info",
         isConfirm: false
       });
@@ -215,8 +210,8 @@ const Bets = () => {
       .then(() => {
         setModalConfig({
           show: true,
-          title: `Dzięki, ${selectedUser}!`,
-          message: "Twoje zakłady zostały pomyślnie przesłane!",
+          title: "Sukces!",
+          message: `Dzięki ${selectedUser}! Twoje typy zostały zapisane.`,
           type: "success",
           isConfirm: false
         });
@@ -225,8 +220,8 @@ const Bets = () => {
         console.error('Błąd:', error);
         setModalConfig({
           show: true,
-          title: "Błąd",
-          message: `${selectedUser}, niestety nie udało się zapisać Twoich danych. Spróbuj ponownie.`,
+          title: "Błąd zapisu",
+          message: `Niestety nie udało się zapisać Twoich danych. Spróbuj ponownie.`,
           type: "error",
           isConfirm: false
         });
@@ -237,46 +232,93 @@ const Bets = () => {
   const toggleEditableOff = () => setAreInputsEditable(false);
   const toggleEditableOn = () => setAreInputsEditable(true);
 
-  const modalOverlayStyle = {
-    position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-    backgroundColor: "rgba(0, 0, 0, 0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999
-  };
-  const modalStyle = {
-    background: "#015f01a9", padding: "25px", borderRadius: "20px", width: "85%", maxWidth: "350px", textAlign: "center", color: "white"
-  };
-  const modalButtonStyle = {
-    backgroundColor: "#DC3545", color: "white", border: "none", padding: "10px 25px", borderRadius: "15px", fontWeight: "bold", marginTop: "15px", cursor: "pointer", margin: "5px"
-  };
-  const cancelButtonStyle = {
-    backgroundColor: "#6c757d", color: "white", border: "none", padding: "10px 25px", borderRadius: "15px", fontWeight: "bold", marginTop: "15px", cursor: "pointer", margin: "5px"
-  };
-
-  const logoStyle = {
-    width: '24px',
-    height: '24px',
-    objectFit: 'contain'
-  };
-
   return (
-    <div className="fade-in" style={{ textAlign: 'center', color: 'yellow' }}>
+    <div className="fade-in" style={{
+      maxWidth: '850px',
+      margin: '0 auto',
+      padding: '16px',
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      color: '#e2e8f0'
+    }}>
+
+      {/* Professional Confirmation Modal */}
       {modalConfig.show && (
-        <div style={modalOverlayStyle} onClick={() => setModalConfig({ ...modalConfig, show: false })}>
-          <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ color: modalConfig.type === 'success' ? '#28a745' : '#fff', marginTop: 0 }}>
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          backgroundColor: "rgba(15, 23, 42, 0.75)",
+          backdropFilter: "blur(6px)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 9999
+        }} onClick={() => setModalConfig({ ...modalConfig, show: false })}>
+          <div style={{
+            background: "#1e293b",
+            border: "1px solid #334155",
+            borderRadius: "16px",
+            padding: "28px 24px",
+            width: "90%",
+            maxWidth: "380px",
+            textAlign: "center",
+            color: "#f8fafc",
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)"
+          }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{
+              color: modalConfig.type === 'success' ? '#34d399' : modalConfig.type === 'error' ? '#f87171' : '#f8fafc',
+              marginTop: 0,
+              fontSize: "1.25rem",
+              fontWeight: "600",
+              letterSpacing: "-0.01em"
+            }}>
               {modalConfig.title}
-            </h2>
-            <p style={{ fontSize: "16px", lineHeight: "1.4" }}>{modalConfig.message}</p>
+            </h3>
+            <p style={{ fontSize: "14px", color: "#94a3b8", lineHeight: "1.5", margin: "16px 0 24px 0" }}>
+              {modalConfig.message}
+            </p>
             {modalConfig.isConfirm ? (
-              <div>
-                <button style={modalButtonStyle} onClick={modalConfig.onConfirm}>
+              <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+                <button style={{
+                  backgroundColor: "#ef4444",
+                  color: "white",
+                  border: "none",
+                  padding: "10px 18px",
+                  borderRadius: "10px",
+                  fontWeight: "600",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  transition: "background-color 0.2s"
+                }} onClick={modalConfig.onConfirm}>
                   Tak, zmień
                 </button>
-                <button style={cancelButtonStyle} onClick={() => setModalConfig({ ...modalConfig, show: false })}>
+                <button style={{
+                  backgroundColor: "#334155",
+                  color: "#cbd5e1",
+                  border: "none",
+                  padding: "10px 18px",
+                  borderRadius: "10px",
+                  fontWeight: "600",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  transition: "background-color 0.2s"
+                }} onClick={() => setModalConfig({ ...modalConfig, show: false })}>
                   Anuluj
                 </button>
               </div>
             ) : (
-              <button style={modalButtonStyle} onClick={() => setModalConfig({ ...modalConfig, show: false })}>
+              <button style={{
+                backgroundColor: "#2563eb",
+                color: "white",
+                border: "none",
+                padding: "10px 24px",
+                borderRadius: "10px",
+                fontWeight: "600",
+                fontSize: "14px",
+                cursor: "pointer"
+              }} onClick={() => setModalConfig({ ...modalConfig, show: false })}>
                 OK
               </button>
             )}
@@ -284,80 +326,84 @@ const Bets = () => {
         </div>
       )}
 
-      {/* Prominent High-Visibility User Banner */}
+      {/* Modern Sleek User Selection Control */}
       <div style={{
-        display: 'inline-flex',
-        flexDirection: 'column',
+        display: 'flex',
         alignItems: 'center',
-        gap: '6px',
-        margin: '15px auto',
-        padding: '12px 20px',
-        backgroundColor: '#1b2a4a',
-        border: selectedUser ? '2px solid #00d2ff' : '2px dashed #ffc107',
-        borderRadius: '16px',
-        boxShadow: selectedUser ? '0 0 15px rgba(0, 210, 255, 0.4)' : 'none',
-        maxWidth: '90%'
+        justify: 'center',
+        gap: '12px',
+        margin: '20px auto 28px auto',
+        padding: '8px 16px',
+        backgroundColor: '#1e293b',
+        border: '1px solid #334155',
+        borderRadius: '12px',
+        maxWidth: 'fit-content',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <FontAwesomeIcon icon={faUser} style={{ fontSize: '18px', color: '#00d2ff' }} />
-          <span style={{ fontSize: '12px', color: '#a0c4ff', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}>
-            Aktywny Gracze:
-          </span>
-        </div>
+        <FontAwesomeIcon icon={faUser} style={{ fontSize: '15px', color: '#38bdf8' }} />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <select
-            disabled={isProfileLocked}
+        <select
+          disabled={isProfileLocked}
+          style={{
+            backgroundColor: isProfileLocked ? 'transparent' : '#0f172a',
+            color: isProfileLocked ? '#f8fafc' : '#38bdf8',
+            fontWeight: '600',
+            fontSize: '15px',
+            padding: '6px 12px',
+            borderRadius: '8px',
+            border: isProfileLocked ? 'none' : '1px solid #475569',
+            cursor: isProfileLocked ? 'default' : 'pointer',
+            outline: 'none',
+            appearance: isProfileLocked ? 'none' : 'auto'
+          }}
+          value={selectedUser}
+          onChange={handleUserSelect}
+        >
+          <option value="">Wybierz użytkownika...</option>
+          {Object.keys(usersData).map((user) => (
+            <option key={user} value={user}>{user}</option>
+          ))}
+        </select>
+
+        {isProfileLocked ? (
+          <button
+            onClick={handleUnlockProfile}
+            title="Kliknij, aby zmienić użytkownika"
             style={{
-              backgroundColor: isProfileLocked ? '#101726' : '#ffffff',
-              color: isProfileLocked ? '#00d2ff' : '#000000',
-              fontWeight: 'bold',
-              fontSize: '18px',
-              fontFamily: 'Rubik, sans-serif',
-              padding: '6px 14px',
+              backgroundColor: '#334155',
+              color: '#cbd5e1',
+              border: '1px solid #475569',
               borderRadius: '8px',
-              border: isProfileLocked ? '1px solid #00d2ff' : '1px solid #ccc',
-              cursor: isProfileLocked ? 'default' : 'pointer',
-              textAlign: 'center'
+              padding: '6px 12px',
+              fontSize: '12px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s'
             }}
-            value={selectedUser}
-            onChange={handleUserSelect}
           >
-            <option value="">-- Wybierz gracza --</option>
-            {Object.keys(usersData).map((user) => (
-              <option key={user} value={user}>{user}</option>
-            ))}
-          </select>
-
-          {isProfileLocked ? (
-            <button
-              onClick={handleUnlockProfile}
-              title="Kliknij, aby zmienić profil"
-              style={{
-                backgroundColor: '#dc3545',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                fontSize: '12px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                boxShadow: '0 2px 5px rgba(0,0,0,0.3)'
-              }}
-            >
-              <FontAwesomeIcon icon={faLock} style={{ marginRight: '4px' }} /> Zmień
-            </button>
-          ) : (
-            selectedUser && (
-              <span style={{ fontSize: '12px', color: '#ffc107', fontWeight: 'bold' }}>
-                <FontAwesomeIcon icon={faLockOpen} /> Nie zablokowano
-              </span>
-            )
-          )}
-        </div>
+            <FontAwesomeIcon icon={faLock} style={{ fontSize: '11px', color: '#f87171' }} />
+            Zmień
+          </button>
+        ) : (
+          selectedUser && (
+            <span style={{ fontSize: '12px', color: '#fbbf24', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <FontAwesomeIcon icon={faLockOpen} /> Niezablokowane
+            </span>
+          )
+        )}
       </div>
 
-      <div style={{ backgroundColor: '#212529ab', color: 'aliceblue', padding: '20px', textAlign: 'center', marginBottom: '10px', marginTop: '1%' }}>
+      {/* Main Betting Table Card Container */}
+      <div style={{
+        backgroundColor: '#1e293b',
+        border: '1px solid #334155',
+        borderRadius: '16px',
+        padding: '24px 16px',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)'
+      }}>
         <Pagination
           currentPage={currentKolejkaIndex}
           totalPages={kolejki.length}
@@ -365,104 +411,169 @@ const Bets = () => {
           label="Kolejka"
         />
 
-        <table style={{ width: '100%', border: '0.5px solid #444', borderCollapse: 'collapse', marginTop: '5%' }}>
-          <thead>
-            <tr>
-              <th style={{ borderBottom: '0.5px solid #444' }}></th>
-              <th style={{ borderBottom: '0.5px solid #444', textAlign: 'right', paddingRight: '10px' }}>Gospodarz</th>
-              <th style={{ borderBottom: '0.5px solid #444' }}></th>
-              <th style={{ borderBottom: '0.5px solid #444', textAlign: 'left', paddingLeft: '10px' }}>Gość</th>
-              <th style={{ borderBottom: '0.5px solid #444' }}>Wynik</th>
-              <th style={{ borderBottom: '0.5px solid #444' }}>1X2</th>
-              <th style={{ borderBottom: '0.5px solid #444' }}>Typ</th>
-            </tr>
-          </thead>
-          <tbody>
-            {kolejki[currentKolejkaIndex]?.games.map((game) => (
-              <React.Fragment key={game.id}>
-                <tr style={{ opacity: game.disabled ? '0.5' : '1', backgroundColor: gameStarted(game.date, game.kickoff) ? '#214029ab' : 'transparent' }}>
-                  <td colSpan="12" className="date" style={{ textAlign: 'left', color: 'gold', fontSize: '10px', paddingLeft: '10%' }}>
-                    &nbsp;&nbsp;&nbsp; {game.date} &nbsp;&nbsp;&nbsp; {game.kickoff} &nbsp;&nbsp;&nbsp; {game.message}
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #444', opacity: game.disabled ? '0.5' : '1', backgroundColor: gameStarted(game.date, game.kickoff) ? '#214029ab' : 'transparent' }}>
-                  <td><p style={{ color: 'grey', margin: 0 }}>{game.id}.</p></td>
+        <div style={{ overflowX: 'auto', marginTop: '16px' }}>
+          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
+            <thead>
+              <tr style={{ color: '#94a3b8', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <th style={{ padding: '8px', textAlign: 'center' }}>#</th>
+                <th style={{ padding: '8px', textAlign: 'right' }}>Gospodarz</th>
+                <th style={{ padding: '8px', textAlign: 'center' }}></th>
+                <th style={{ padding: '8px', textAlign: 'left' }}>Gość</th>
+                <th style={{ padding: '8px', textAlign: 'center' }}>Wynik</th>
+                <th style={{ padding: '8px', textAlign: 'center' }}>1X2</th>
+                <th style={{ padding: '8px', textAlign: 'center' }}>Typ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {kolejki[currentKolejkaIndex]?.games.map((game) => {
+                const isStarted = gameStarted(game.date, game.kickoff);
+                return (
+                  <React.Fragment key={game.id}>
+                    <tr>
+                      <td colSpan="7" style={{
+                        textAlign: 'left',
+                        color: '#fbbf24',
+                        fontSize: '11px',
+                        padding: '12px 0 2px 8px',
+                        fontWeight: '500'
+                      }}>
+                        {game.date} &bull; {game.kickoff} {game.message && `&bull; ${game.message}`}
+                      </td>
+                    </tr>
+                    <tr style={{
+                      backgroundColor: isStarted ? 'rgba(15, 23, 42, 0.5)' : '#0f172a',
+                      opacity: game.disabled ? '0.5' : '1',
+                      transition: 'background-color 0.2s'
+                    }}>
+                      <td style={{ padding: '10px 8px', color: '#64748b', fontSize: '13px', borderRadius: '8px 0 0 8px', textAlign: 'center' }}>
+                        {game.id}
+                      </td>
 
-                  <td style={{ fontSize: '16px', paddingRight: '10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
-                      <span>{game.home}</span>
-                      <img src={getTeamLogo(game.home)} className="logo" alt="" style={logoStyle} />
-                    </div>
-                  </td>
+                      <td style={{ padding: '10px 8px', fontSize: '14px', fontWeight: '500' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                          <span>{game.home}</span>
+                          <img src={getTeamLogo(game.home)} alt="" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
+                        </div>
+                      </td>
 
-                  <td style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }}>-</td>
+                      <td style={{ textAlign: 'center', color: '#64748b', fontWeight: '600' }}>-</td>
 
-                  <td style={{ fontSize: '16px', paddingLeft: '10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '8px' }}>
-                      <img src={getTeamLogo(game.away)} className="logo" alt="" style={logoStyle} />
-                      <span>{game.away}</span>
-                    </div>
-                  </td>
+                      <td style={{ padding: '10px 8px', fontSize: '14px', fontWeight: '500' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '8px' }}>
+                          <img src={getTeamLogo(game.away)} alt="" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
+                          <span>{game.away}</span>
+                        </div>
+                      </td>
 
-                  <td style={{ textAlign: 'center', fontSize: '18px' }}>{results[game.id]}</td>
-                  <td style={{ textAlign: 'center' }}>
-                    <select value={game.bet || ''} disabled>
-                      <option value="">-</option>
-                      <option value="1">1</option>
-                      <option value="X">X</option>
-                      <option value="2">2</option>
-                    </select>
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <input
-                      style={{
-                        width: '50px',
-                        backgroundColor: game.score ? (isReadOnly(selectedUser, game.id) ? 'transparent' : 'white') : 'white',
-                        color: 'red',
-                        textAlign: 'center'
-                      }}
-                      type="text"
-                      placeholder={isReadOnly(selectedUser, game.id) ? '✔️' : 'x:x'}
-                      value={game.score || ''}
-                      onChange={(e) => handleScoreChange(game.id, e.target.value)}
-                      maxLength="3"
-                      readOnly={areInputsEditable && isReadOnly(selectedUser, game.id)}
-                      disabled={areInputsEditable && gameStarted(game.date, game.kickoff)}
-                    />
-                  </td>
-                </tr>
-              </React.Fragment>
-            ))}
-          </tbody>
-        </table>
+                      <td style={{ textAlign: 'center', fontSize: '14px', fontWeight: '600', color: '#38bdf8' }}>
+                        {results[game.id] || '-'}
+                      </td>
 
-        <div style={{ marginTop: '15px' }}>
-          <label style={{ color: 'white', fontSize: '12px', cursor: 'pointer' }}>
+                      <td style={{ textAlign: 'center' }}>
+                        <select
+                          value={game.bet || ''}
+                          disabled
+                          style={{
+                            backgroundColor: 'transparent',
+                            color: '#94a3b8',
+                            border: 'none',
+                            fontWeight: '600',
+                            textAlign: 'center',
+                            appearance: 'none'
+                          }}
+                        >
+                          <option value="">-</option>
+                          <option value="1">1</option>
+                          <option value="X">X</option>
+                          <option value="2">2</option>
+                        </select>
+                      </td>
+
+                      <td style={{ textAlign: 'center', borderRadius: '0 8px 8px 0', paddingRight: '8px' }}>
+                        <input
+                          style={{
+                            width: '48px',
+                            padding: '4px',
+                            borderRadius: '6px',
+                            border: '1px solid #334155',
+                            backgroundColor: game.score ? (isReadOnly(selectedUser, game.id) ? 'transparent' : '#ffffff') : '#ffffff',
+                            color: isReadOnly(selectedUser, game.id) ? '#38bdf8' : '#0f172a',
+                            fontWeight: '700',
+                            textAlign: 'center',
+                            outline: 'none'
+                          }}
+                          type="text"
+                          placeholder={isReadOnly(selectedUser, game.id) ? '✔' : 'x:x'}
+                          value={game.score || ''}
+                          onChange={(e) => handleScoreChange(game.id, e.target.value)}
+                          maxLength="3"
+                          readOnly={areInputsEditable && isReadOnly(selectedUser, game.id)}
+                          disabled={areInputsEditable && isStarted}
+                        />
+                      </td>
+                    </tr>
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Options & Action Bar */}
+        <div style={{
+          marginTop: '24px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '16px'
+        }}>
+          <label style={{
+            color: '#94a3b8',
+            fontSize: '13px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            userSelect: 'none'
+          }}>
             <input
               type="checkbox"
               checked={isHiddenActive}
               onChange={(e) => setIsHiddenActive(e.target.checked)}
-              style={{ marginRight: '5px' }}
+              style={{ accentColor: '#2563eb', width: '16px', height: '16px', cursor: 'pointer' }}
             />
-            Ukryj moje typy 🔒
+            Ukryj moje typy przed innymi 🔒
           </label>
-        </div>
 
-        <button
-          style={{ backgroundColor: '#DC3545', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '10px', cursor: 'pointer', display: 'inline-block', margin: '10px', fontSize: '14px', width: '60%' }}
-          onClick={handleSubmit}
-        >
-          Prześlij {isHiddenActive ? '🔒' : ''}
-        </button>
+          <button
+            style={{
+              backgroundColor: '#2563eb',
+              color: 'white',
+              padding: '12px 32px',
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              fontSize: '15px',
+              fontWeight: '600',
+              boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.4)',
+              transition: 'background-color 0.2s, transform 0.1s',
+              width: '100%',
+              maxWidth: '280px'
+            }}
+            onClick={handleSubmit}
+          >
+            Prześlij typy {isHiddenActive ? '🔒' : ''}
+          </button>
+        </div>
 
         {isDataSubmitted && Object.keys(submittedData).map((user) => (
           <ExpandableCard key={user} user={user} bets={submittedData[user]} results={results} />
         ))}
       </div>
 
-      <div style={{ textAlign: 'center', marginTop: '20px' }}>
-        <button style={{ backgroundColor: '#28a745', color: 'white', padding: '10px 1px', border: 'none', borderRadius: '5px', marginRight: '10px', cursor: 'pointer' }} onClick={toggleEditableOff}>..</button>
-        <button style={{ backgroundColor: '#007bff', color: 'white', padding: '10px 1px', border: 'none', borderRadius: '5px', cursor: 'pointer' }} onClick={toggleEditableOn}>..</button>
+      <div style={{ textAlign: 'center', marginTop: '20px', opacity: 0.3 }}>
+        <button style={{ backgroundColor: 'transparent', color: '#64748b', border: 'none', cursor: 'pointer', marginRight: '5px' }} onClick={toggleEditableOff}>.</button>
+        <button style={{ backgroundColor: 'transparent', color: '#64748b', border: 'none', cursor: 'pointer' }} onClick={toggleEditableOn}>.</button>
       </div>
 
       <InstallPWAButton />
