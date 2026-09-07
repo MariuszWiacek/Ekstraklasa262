@@ -3,7 +3,7 @@ import { getDatabase, ref, onValue, update } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 import { initializeApp, getApps } from 'firebase/app';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons';
 import { DateTime } from 'luxon';
 
 import usersData from '../gameData/users.json';
@@ -47,6 +47,7 @@ const groupGamesIntoKolejki = (games = []) => {
 const Bets = () => {
   const [kolejki, setKolejki] = useState(() => groupGamesIntoKolejki(gameData));
   const [selectedUser, setSelectedUser] = useState('');
+  const [isProfileLocked, setIsProfileLocked] = useState(false);
   const [submittedData, setSubmittedData] = useState({});
   const [isDataSubmitted, setIsDataSubmitted] = useState(false);
   const [results, setResults] = useState({});
@@ -62,11 +63,16 @@ const Bets = () => {
   });
 
   useEffect(() => {
-    const lastChosenUser = localStorage.getItem('selectedUser');
-    if (lastChosenUser) setSelectedUser(lastChosenUser);
+    const claimedUser = localStorage.getItem('claimedUser');
+    if (claimedUser) {
+      setSelectedUser(claimedUser);
+      setIsProfileLocked(true);
+    }
 
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
-      if (user?.displayName) setSelectedUser(user.displayName);
+      if (user?.displayName && !claimedUser) {
+        setSelectedUser(user.displayName);
+      }
     });
 
     const submittedRef = ref(database, 'submittedData');
@@ -97,6 +103,22 @@ const Bets = () => {
     };
   }, []);
 
+  const handleUserSelect = (e) => {
+    const newUser = e.target.value;
+    setSelectedUser(newUser);
+    if (newUser) {
+      localStorage.setItem('claimedUser', newUser);
+      setIsProfileLocked(true);
+    }
+  };
+
+  const handleUnlockProfile = () => {
+    if (window.confirm("Czy na pewno chcesz zmienić profil użytkownika na tym urządzeniu?")) {
+      localStorage.removeItem('claimedUser');
+      setIsProfileLocked(false);
+    }
+  };
+
   const isReadOnly = (user, gameId) => Boolean(submittedData[user] && submittedData[user][gameId]);
 
   const gameStarted = (gameDate, gameKickoff) => {
@@ -111,7 +133,6 @@ const Bets = () => {
 
     const parts = score.split(':');
 
-    // Ensure both sides exist and are non-empty strings before evaluating
     if (parts.length !== 2 || parts[0].trim() === '' || parts[1].trim() === '') {
       return '';
     }
@@ -119,7 +140,6 @@ const Bets = () => {
     const home = Number(parts[0]);
     const away = Number(parts[1]);
 
-    // Ensure both extracted values are valid numbers
     if (isNaN(home) || isNaN(away)) return '';
 
     if (home === away) return 'X';
@@ -171,8 +191,8 @@ const Bets = () => {
     if (Object.keys(newBetsToSubmit).length === 0) {
       setModalConfig({
         show: true,
-        title: "Informacja",
-        message: "Wszystkie zakłady zostały już przesłane.",
+        title: `Hej, ${selectedUser}!`,
+        message: "Wszystkie Twoje zakłady w tej kolejce zostały już wcześniej przesłane.",
         type: "info"
       });
       return;
@@ -182,8 +202,8 @@ const Bets = () => {
       .then(() => {
         setModalConfig({
           show: true,
-          title: "",
-          message: "Zakłady zostały pomyślnie przesłane!",
+          title: `Dzięki, ${selectedUser}!`,
+          message: "Twoje zakłady zostały pomyślnie przesłane!",
           type: "success"
         });
       })
@@ -192,7 +212,7 @@ const Bets = () => {
         setModalConfig({
           show: true,
           title: "Błąd",
-          message: "Nie udało się zapisać danych.",
+          message: `${selectedUser}, niestety nie udało się zapisać Twoich danych. Spróbuj ponownie.`,
           type: "error"
         });
       });
@@ -235,21 +255,57 @@ const Bets = () => {
         </div>
       )}
 
-      <FontAwesomeIcon icon={faUser} style={{ marginRight: '8px', fontSize: '14px', color: 'yellow' }} />
-      <select
-        style={{ margin: '1px', backgroundColor: 'pink', fontWeight: 'bold', fontFamily: 'Rubik' }}
-        value={selectedUser}
-        onChange={(e) => {
-          setSelectedUser(e.target.value);
-          localStorage.setItem('selectedUser', e.target.value);
-        }}
-      >
-        {Object.keys(usersData).map((user) => (
-          <option key={user} value={user}>{user}</option>
-        ))}
-      </select>
+      {/* User Selector Container */}
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+        <FontAwesomeIcon icon={faUser} style={{ fontSize: '14px', color: 'yellow' }} />
+        
+        <select
+          disabled={isProfileLocked}
+          style={{
+            margin: '1px',
+            backgroundColor: isProfileLocked ? '#d3d3d3' : 'pink',
+            fontWeight: 'bold',
+            fontFamily: 'Rubik',
+            cursor: isProfileLocked ? 'not-allowed' : 'pointer',
+            opacity: isProfileLocked ? 0.8 : 1
+          }}
+          value={selectedUser}
+          onChange={handleUserSelect}
+        >
+          <option value="">-- Wybierz gracza --</option>
+          {Object.keys(usersData).map((user) => (
+            <option key={user} value={user}>{user}</option>
+          ))}
+        </select>
 
-      <div style={{ backgroundColor: '#212529ab', color: 'aliceblue', padding: '20px', textAlign: 'center', marginBottom: '10px', marginTop: '5%' }}>
+        {/* Lock / Unlock Controls */}
+        {isProfileLocked ? (
+          <button
+            onClick={handleUnlockProfile}
+            title="Kliknij, aby zmienić profil użytkownika"
+            style={{
+              backgroundColor: '#ffc107',
+              color: '#000',
+              border: 'none',
+              borderRadius: '5px',
+              padding: '2px 8px',
+              fontSize: '12px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            <FontAwesomeIcon icon={faLock} style={{ marginRight: '4px' }} /> Zmień
+          </button>
+        ) : (
+          selectedUser && (
+            <span style={{ fontSize: '11px', color: '#ffc107' }}>
+              <FontAwesomeIcon icon={faLockOpen} /> Odblokowany
+            </span>
+          )
+        )}
+      </div>
+
+      <div style={{ backgroundColor: '#212529ab', color: 'aliceblue', padding: '20px', textAlign: 'center', marginBottom: '10px', marginTop: '2%' }}>
         <Pagination
           currentPage={currentKolejkaIndex}
           totalPages={kolejki.length}
