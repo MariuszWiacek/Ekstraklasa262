@@ -54,7 +54,10 @@ const Bets = () => {
   const [currentKolejkaIndex, setCurrentKolejkaIndex] = useState(0);
   const [areInputsEditable, setAreInputsEditable] = useState(true);
   const [isHiddenActive, setIsHiddenActive] = useState(false);
+  
+  // States for user change modal
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   const [modalConfig, setModalConfig] = useState({
     show: false,
@@ -204,9 +207,23 @@ const Bets = () => {
       });
   };
 
+  const handleSaveUserClick = () => {
+    if (tempUser === selectedUser) {
+      setIsUserModalOpen(false);
+      return;
+    }
+    setIsConfirming(true);
+  };
+
   const handleConfirmUserChange = () => {
     setSelectedUser(tempUser);
     localStorage.setItem('selectedUser', tempUser);
+    setIsConfirming(false);
+    setIsUserModalOpen(false);
+  };
+
+  const handleCloseUserModal = () => {
+    setIsConfirming(false);
     setIsUserModalOpen(false);
   };
 
@@ -250,27 +267,46 @@ const Bets = () => {
 
       {/* Change User Modal */}
       {isUserModalOpen && (
-        <div style={modalOverlayStyle} onClick={() => setIsUserModalOpen(false)}>
+        <div style={modalOverlayStyle} onClick={handleCloseUserModal}>
           <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ marginTop: 0 }}>Zmień użytkownika</h3>
-            <p style={{ fontSize: "14px" }}>Wybierz osobę z listy:</p>
-            <select
-              style={{ padding: '8px', borderRadius: '8px', backgroundColor: 'pink', fontWeight: 'bold', fontFamily: 'Rubik', width: '80%', marginBottom: '10px' }}
-              value={tempUser}
-              onChange={(e) => setTempUser(e.target.value)}
-            >
-              {Object.keys(usersData).map((user) => (
-                <option key={user} value={user}>{user}</option>
-              ))}
-            </select>
-            <div>
-              <button style={{ ...modalButtonStyle, backgroundColor: '#28a745' }} onClick={handleConfirmUserChange}>
-                Zapisz
-              </button>
-              <button style={modalButtonStyle} onClick={() => setIsUserModalOpen(false)}>
-                Anuluj
-              </button>
-            </div>
+            {!isConfirming ? (
+              <>
+                <h3 style={{ marginTop: 0 }}>Zmień użytkownika</h3>
+                <p style={{ fontSize: "14px" }}>Wybierz osobę z listy:</p>
+                <select
+                  style={{ padding: '8px', borderRadius: '8px', backgroundColor: 'pink', fontWeight: 'bold', fontFamily: 'Rubik', width: '80%', marginBottom: '10px' }}
+                  value={tempUser}
+                  onChange={(e) => setTempUser(e.target.value)}
+                >
+                  {Object.keys(usersData).map((user) => (
+                    <option key={user} value={user}>{user}</option>
+                  ))}
+                </select>
+                <div>
+                  <button style={{ ...modalButtonStyle, backgroundColor: '#28a745' }} onClick={handleSaveUserClick}>
+                    Zapisz
+                  </button>
+                  <button style={modalButtonStyle} onClick={handleCloseUserModal}>
+                    Anuluj
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 style={{ marginTop: 0 }}>Potwierdzenie</h3>
+                <p style={{ fontSize: "16px", lineHeight: "1.4" }}>
+                  Czy na pewno zmienić użytkownika na <strong>{tempUser}</strong>?
+                </p>
+                <div>
+                  <button style={{ ...modalButtonStyle, backgroundColor: '#28a745' }} onClick={handleConfirmUserChange}>
+                    Tak
+                  </button>
+                  <button style={modalButtonStyle} onClick={() => setIsConfirming(false)}>
+                    Nie
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -298,6 +334,7 @@ const Bets = () => {
         }}
         onClick={() => {
           setTempUser(selectedUser);
+          setIsConfirming(false);
           setIsUserModalOpen(true);
         }}
       >
