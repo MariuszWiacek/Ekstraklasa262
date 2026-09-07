@@ -3,7 +3,7 @@ import { getDatabase, ref, onValue, update } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 import { initializeApp, getApps } from 'firebase/app';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faLock, faLockOpen, faCheckCircle, faShieldAlt } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons';
 import { DateTime } from 'luxon';
 
 import usersData from '../gameData/users.json';
@@ -240,8 +240,6 @@ const Bets = () => {
       fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       color: '#e2e8f0'
     }}>
-
-      {/* Professional Confirmation Modal */}
       {modalConfig.show && (
         <div style={{
           position: "fixed",
@@ -289,8 +287,7 @@ const Bets = () => {
                   borderRadius: "10px",
                   fontWeight: "600",
                   fontSize: "14px",
-                  cursor: "pointer",
-                  transition: "background-color 0.2s"
+                  cursor: "pointer"
                 }} onClick={modalConfig.onConfirm}>
                   Tak, zmień
                 </button>
@@ -302,8 +299,7 @@ const Bets = () => {
                   borderRadius: "10px",
                   fontWeight: "600",
                   fontSize: "14px",
-                  cursor: "pointer",
-                  transition: "background-color 0.2s"
+                  cursor: "pointer"
                 }} onClick={() => setModalConfig({ ...modalConfig, show: false })}>
                   Anuluj
                 </button>
@@ -326,7 +322,6 @@ const Bets = () => {
         </div>
       )}
 
-      {/* Modern Sleek User Selection Control */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -380,8 +375,7 @@ const Bets = () => {
               fontWeight: '500',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.2s'
+              gap: '6px'
             }}
           >
             <FontAwesomeIcon icon={faLock} style={{ fontSize: '11px', color: '#f87171' }} />
@@ -396,7 +390,6 @@ const Bets = () => {
         )}
       </div>
 
-      {/* Main Betting Table Card Container */}
       <div style={{
         backgroundColor: '#1e293b',
         border: '1px solid #334155',
@@ -430,20 +423,19 @@ const Bets = () => {
                 return (
                   <React.Fragment key={game.id}>
                     <tr>
-                      <td colSpan="7" style={{
+                      <td colSpan={7} style={{
                         textAlign: 'left',
                         color: '#fbbf24',
                         fontSize: '11px',
                         padding: '12px 0 2px 8px',
                         fontWeight: '500'
                       }}>
-                        {game.date} &bull; {game.kickoff} {game.message && `&bull; ${game.message}`}
+                        {game.date} • {game.kickoff} {game.message ? `• ${game.message}` : ''}
                       </td>
                     </tr>
                     <tr style={{
                       backgroundColor: isStarted ? 'rgba(15, 23, 42, 0.5)' : '#0f172a',
-                      opacity: game.disabled ? '0.5' : '1',
-                      transition: 'background-color 0.2s'
+                      opacity: game.disabled ? '0.5' : '1'
                     }}>
                       <td style={{ padding: '10px 8px', color: '#64748b', fontSize: '13px', borderRadius: '8px 0 0 8px', textAlign: 'center' }}>
                         {game.id}
@@ -506,7 +498,7 @@ const Bets = () => {
                           placeholder={isReadOnly(selectedUser, game.id) ? '✔' : 'x:x'}
                           value={game.score || ''}
                           onChange={(e) => handleScoreChange(game.id, e.target.value)}
-                          maxLength="3"
+                          maxLength={3}
                           readOnly={areInputsEditable && isReadOnly(selectedUser, game.id)}
                           disabled={areInputsEditable && isStarted}
                         />
@@ -519,7 +511,6 @@ const Bets = () => {
           </table>
         </div>
 
-        {/* Options & Action Bar */}
         <div style={{
           marginTop: '24px',
           display: 'flex',
@@ -556,7 +547,6 @@ const Bets = () => {
               fontSize: '15px',
               fontWeight: '600',
               boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.4)',
-              transition: 'background-color 0.2s, transform 0.1s',
               width: '100%',
               maxWidth: '280px'
             }}
