@@ -149,7 +149,7 @@ const Bets = () => {
     setKolejki(updated);
   };
 
-  const handleSubmit = async () => {
+    const handleSubmit = async () => {
     if (!selectedUser) {
       setModalConfig({
         show: true,
@@ -166,25 +166,120 @@ const Bets = () => {
     // Domyślne metadane
     let metadata = {
       timestamp: new Date().toISOString(),
-      ip: 'Nieznane',
-      country: 'Nieznany',
+      ip: 'Brak',
+      country: 'Polska',
       city: 'Nieznane'
     };
 
-    try {
-      // Pobieranie miasta, kraju oraz IP przez ip-api.com
-      const response = await fetch('https://ip-api.com/json/?fields=status,country,city,query');
-      if (response.ok) {
-        const ipData = await response.json();
-        if (ipData.status === 'success') {
-          metadata.ip = ipData.query || 'Nieznane';
-          metadata.country = ipData.country || 'Nieznany';
-          metadata.city = ipData.city || 'Nieznane';
+    // 1. Pomocnicza funkcja do pobierania dokładnego miasta z GPS/Wi-Fi urządzenia
+    const getExactCityFromGPS = () => {
+      return new Promise((resolve) => {
+        if (!navigator.geolocation) return resolve(null);
+
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            try {
+              const { latitude, longitude } = position.coords;
+              // Geokodowanie odwrotne (GPS -> Nazwa Miasta) przez darmowe OpenStreetMap API
+              const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+              if (res.ok) {
+                const geoData = await res.json();
+                const city = geoData.address.city || geoData.address.town || geoData.address.village || geoData.address.municipality;
+                resolve(city || null);
+              } else {
+                resolve(null);
+              }
+            } catch {
+              resolve(null);
+            }
+          },
+          () => resolve(null), // Jeśli użytkownik odrzuci uprawnienia do lokalizacji
+          { timeout: 4000 }
+        );
+      });
+    };
+
+    // 2. Próba pobrania miasta z GPS urządzenia
+    const gpsCity = await getExactCityFromGPS();
+
+    if (gpsCity) {
+      metadata.city = gpsCity;
+    } else {
+      // 3. Fallback: Jeśli brak dostępu do GPS, odpytujemy niezawodne HTTPS API po IP
+      try {
+        const response = await fetch('https://ipwho.is/');
+        if (response.ok) {
+          const ipData = await response.json();
+          if (ipData.success && ipData.city) {
+            metadata.ip = ipData.ip || 'Brak';
+            metadata.country = ipData.country || 'Polska';
+            metadata.city = ipData.city;
+          }
+        }
+      } catch (error) {
+        // Drugie zapasowe API HTTPS w razie braku połączenia z pierwszym
+        try {
+          const res2 = await fetch('https://ipapi.co/json/');
+          if (res2.ok) {
+            const data2 = await res2.json();
+            if (data2.city) {
+              metadata.ip = data2.ip || 'Brak';
+              metadata.country = data2.country_name || 'Polska';
+              metadata.city = data2.city;
+            }
+          }
+        } catch (e) {
+          console.warn('Nie udało się ustalić miasta z IP:', e);
         }
       }
-    } catch (error) {
-      console.error('Błąd pobierania metadanych IP:', error);
     }
+
+    const newBetsToSubmit = currentKolejka?.games.reduce((acc, game) => {
+      if (game.score && !userSubmittedBets[game.id]) {
+        acc[game.id] = {
+          home: game.home,
+          away: game.away,
+          score: game.score,
+          prediction: game.score,
+          bet: autoDetectBetType(game.score),
+          kolejkaId: game.kolejkaId,
+          isHidden: isHiddenActive,
+          metadata: metadata
+        };
+      }
+      return acc;
+    }, {}) || {};
+
+    if (Object.keys(newBetsToSubmit).length === 0) {
+      setModalConfig({
+        show: true,
+        title: "Informacja",
+        message: "Wszystkie zakłady zostały już przesłane.",
+        type: "info"
+      });
+      return;
+    }
+
+    update(ref(database, `submittedData/${selectedUser}`), newBetsToSubmit)
+      .then(() => {
+        setModalConfig({
+          show: true,
+          title: "Sukces",
+          message: `Dzięki ${selectedUser}, Zakłady zostały pomyślnie przesłane!`,
+          type: "success"
+        });
+      })
+      .catch((error) => {
+        console.error('Błąd:', error);
+        setModalConfig({
+          show: true,
+          title: "Błąd",
+          message: "Nie udało się zapisać danych.",
+          type: "error"
+        });
+      });
+  };
+
 
     const newBetsToSubmit = currentKolejka?.games.reduce((acc, game) => {
       if (game.score && !userSubmittedBets[game.id]) {
