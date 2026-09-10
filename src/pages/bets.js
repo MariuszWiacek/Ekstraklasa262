@@ -54,8 +54,8 @@ const Bets = () => {
   const [currentKolejkaIndex, setCurrentKolejkaIndex] = useState(0);
   const [areInputsEditable, setAreInputsEditable] = useState(true);
   const [isHiddenActive, setIsHiddenActive] = useState(false);
-  
-  // States for user change modal
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
@@ -119,16 +119,11 @@ const Bets = () => {
 
   const autoDetectBetType = (score) => {
     if (!score || !score.includes(':')) return '';
-
     const parts = score.split(':');
-
-    if (parts.length !== 2 || parts[0].trim() === '' || parts[1].trim() === '') {
-      return '';
-    }
+    if (parts.length !== 2 || parts[0].trim() === '' || parts[1].trim() === '') return '';
 
     const home = Number(parts[0]);
     const away = Number(parts[1]);
-
     if (isNaN(home) || isNaN(away)) return '';
 
     if (home === away) return 'X';
@@ -149,6 +144,49 @@ const Bets = () => {
     setKolejki(updated);
   };
 
+  // Niezawodne ustalanie lokalizacji i IP
+  const fetchLocationData = async () => {
+    let clientIp = 'Brak';
+    let city = '';
+
+    // 1. Próba pobrania IP z Cloudflare (nie do zablokowania przez AdBlock)
+    try {
+      const cfRes = await fetch('https://1.1.1.1/cdn-cgi/trace');
+      if (cfRes.ok) {
+        const text = await cfRes.text();
+        const ipLine = text.split('\n').find(line => line.startsWith('ip='));
+        if (ipLine) clientIp = ipLine.split('=')[1];
+      }
+    } catch (e) {
+      console.warn('Brak IP z Cloudflare');
+    }
+
+    // 2. Próba ustalenia miasta z niezawodnego HTTPS API po IP
+    try {
+      const ipApiRes = await fetch('https://ipapi.co/json/');
+      if (ipApiRes.ok) {
+        const data = await ipApiRes.json();
+        if (data.city) city = data.city;
+        if (data.ip) clientIp = data.ip;
+      }
+    } catch (e) {
+      console.warn('ipapi zablokowany');
+    }
+
+    // 3. Pancerne źródło zapasowe: Wyciąganie nazwy miasta bezpośrednio ze strefy czasowej systemu
+    if (!city) {
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Warsaw';
+        const rawCity = tz.split('/')[1] || 'Warszawa';
+        city = rawCity.replace(/_/g, ' ');
+      } catch (e) {
+        city = 'Warszawa';
+      }
+    }
+
+    return { ip: clientIp, city };
+  };
+
   const handleSubmit = async () => {
     if (!selectedUser) {
       setModalConfig({
@@ -160,77 +198,19 @@ const Bets = () => {
       return;
     }
 
+    setIsSubmitting(true);
+
     const currentKolejka = kolejki[currentKolejkaIndex];
     const userSubmittedBets = submittedData[selectedUser] || {};
 
-    let metadata = {
+    const { ip, city } = await fetchLocationData();
+
+    const metadata = {
       timestamp: new Date().toISOString(),
-      ip: 'Brak',
+      ip: ip,
       country: 'Polska',
-      city: 'Nieznane'
+      city: city
     };
-
-    // Funkcja do pobierania miasta z GPS/Wi-Fi urządzenia
-    const getExactCityFromGPS = () => {
-      return new Promise((resolve) => {
-        if (!navigator.geolocation) return resolve(null);
-
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            try {
-              const { latitude, longitude } = position.coords;
-              const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-              if (res.ok) {
-                const geoData = await res.json();
-                const city = geoData.address.city || geoData.address.town || geoData.address.village || geoData.address.municipality;
-                resolve(city || null);
-              } else {
-                resolve(null);
-              }
-            } catch {
-              resolve(null);
-            }
-          },
-          () => resolve(null),
-          { timeout: 4000 }
-        );
-      });
-    };
-
-    // 1. Próba ustalenia miasta z GPS
-    const gpsCity = await getExactCityFromGPS();
-
-    if (gpsCity) {
-      metadata.city = gpsCity;
-    } else {
-      // 2. Fallback: Odpytanie API po IP (ipwho.is)
-      try {
-        const response = await fetch('https://ipwho.is/');
-        if (response.ok) {
-          const ipData = await response.json();
-          if (ipData.success && ipData.city) {
-            metadata.ip = ipData.ip || 'Brak';
-            metadata.country = ipData.country || 'Polska';
-            metadata.city = ipData.city;
-          }
-        }
-      } catch (error) {
-        // 3. Rezerwowe API po IP (ipapi.co)
-        try {
-          const res2 = await fetch('https://ipapi.co/json/');
-          if (res2.ok) {
-            const data2 = await res2.json();
-            if (data2.city) {
-              metadata.ip = data2.ip || 'Brak';
-              metadata.country = data2.country_name || 'Polska';
-              metadata.city = data2.city;
-            }
-          }
-        } catch (e) {
-          console.warn('Nie udało się ustalić lokalizacji:', e);
-        }
-      }
-    }
 
     const newBetsToSubmit = currentKolejka?.games.reduce((acc, game) => {
       if (game.score && !userSubmittedBets[game.id]) {
@@ -249,6 +229,7 @@ const Bets = () => {
     }, {}) || {};
 
     if (Object.keys(newBetsToSubmit).length === 0) {
+      setIsSubmitting(false);
       setModalConfig({
         show: true,
         title: "Informacja",
@@ -260,14 +241,16 @@ const Bets = () => {
 
     update(ref(database, `submittedData/${selectedUser}`), newBetsToSubmit)
       .then(() => {
+        setIsSubmitting(false);
         setModalConfig({
           show: true,
           title: "Sukces",
-          message: `Dzięki ${selectedUser}, Zakłady zostały pomyślnie przesłane!`,
+          message: `Dzięki ${selectedUser}, Zakłady zostały pomyślnie przesłane! Lokalizacja: ${city}`,
           type: "success"
         });
       })
       .catch((error) => {
+        setIsSubmitting(false);
         console.error('Błąd:', error);
         setModalConfig({
           show: true,
@@ -321,7 +304,7 @@ const Bets = () => {
 
   return (
     <div className="fade-in" style={{ textAlign: 'center', color: 'yellow' }}>
-      {/* Modal Informacyjny */}
+      {/* Modal powiadomień */}
       {modalConfig.show && (
         <div style={modalOverlayStyle} onClick={() => setModalConfig({ ...modalConfig, show: false })}>
           <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
@@ -336,7 +319,7 @@ const Bets = () => {
         </div>
       )}
 
-      {/* Modal Zmiany Użytkownika */}
+      {/* Modal zmiany użytkownika */}
       {isUserModalOpen && (
         <div style={modalOverlayStyle} onClick={handleCloseUserModal}>
           <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
@@ -504,10 +487,11 @@ const Bets = () => {
         </div>
 
         <button
-          style={{ backgroundColor: '#DC3545', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '10px', cursor: 'pointer', display: 'inline-block', margin: '10px', fontSize: '14px', width: '60%' }}
+          style={{ backgroundColor: isSubmitting ? '#888' : '#DC3545', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '10px', cursor: 'pointer', display: 'inline-block', margin: '10px', fontSize: '14px', width: '60%' }}
           onClick={handleSubmit}
+          disabled={isSubmitting}
         >
-          Prześlij {isHiddenActive ? '🔒' : ''}
+          {isSubmitting ? 'Wysyłanie...' : `Prześlij ${isHiddenActive ? '🔒' : ''}`}
         </button>
 
         {isDataSubmitted && Object.keys(submittedData).map((user) => (
