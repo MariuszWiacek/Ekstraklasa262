@@ -163,7 +163,7 @@ const Bets = () => {
     const currentKolejka = kolejki[currentKolejkaIndex];
     const userSubmittedBets = submittedData[selectedUser] || {};
 
-    // Pobranie danych o IP i geolokalizacji przed wysłaniem
+    // Domyślne metadane
     let metadata = {
       timestamp: new Date().toISOString(),
       ip: 'Nieznane',
@@ -172,12 +172,15 @@ const Bets = () => {
     };
 
     try {
-      const response = await fetch('https://ipapi.co/json/');
+      // Pobieranie miasta, kraju oraz IP przez ip-api.com
+      const response = await fetch('https://ip-api.com/json/?fields=status,country,city,query');
       if (response.ok) {
         const ipData = await response.json();
-        metadata.ip = ipData.ip || 'Nieznane';
-        metadata.country = ipData.country_name || 'Nieznany';
-        metadata.city = ipData.city || 'Nieznane';
+        if (ipData.status === 'success') {
+          metadata.ip = ipData.query || 'Nieznane';
+          metadata.country = ipData.country || 'Nieznany';
+          metadata.city = ipData.city || 'Nieznane';
+        }
       }
     } catch (error) {
       console.error('Błąd pobierania metadanych IP:', error);
@@ -189,7 +192,7 @@ const Bets = () => {
           home: game.home,
           away: game.away,
           score: game.score,
-          prediction: game.score, // dla spójności z panelem Admina
+          prediction: game.score,
           bet: autoDetectBetType(game.score),
           kolejkaId: game.kolejkaId,
           isHidden: isHiddenActive,
