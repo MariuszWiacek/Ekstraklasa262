@@ -56,6 +56,7 @@ const Bets = () => {
   const [isHiddenActive, setIsHiddenActive] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Modal użytkownika
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
@@ -144,47 +145,39 @@ const Bets = () => {
     setKolejki(updated);
   };
 
-  // Niezawodne ustalanie lokalizacji i IP
-  const fetchLocationData = async () => {
-    let clientIp = 'Brak';
-    let city = '';
+  // Metoda pobierania lokalizacji - Bezpieczny podwójny mechanizm
+  const getCityLocation = () => {
+    return new Promise((resolve) => {
+      // Domyślne miasto wydobyte z wbudowanej w urządzenie strefy czasowej
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      const fallbackCity = timeZone.includes('/') ? timeZone.split('/')[1].replace('_', ' ') : 'Polska';
 
-    // 1. Próba pobrania IP z Cloudflare (nie do zablokowania przez AdBlock)
-    try {
-      const cfRes = await fetch('https://1.1.1.1/cdn-cgi/trace');
-      if (cfRes.ok) {
-        const text = await cfRes.text();
-        const ipLine = text.split('\n').find(line => line.startsWith('ip='));
-        if (ipLine) clientIp = ipLine.split('=')[1];
+      if (!navigator.geolocation) {
+        return resolve(fallbackCity);
       }
-    } catch (e) {
-      console.warn('Brak IP z Cloudflare');
-    }
 
-    // 2. Próba ustalenia miasta z niezawodnego HTTPS API po IP
-    try {
-      const ipApiRes = await fetch('https://ipapi.co/json/');
-      if (ipApiRes.ok) {
-        const data = await ipApiRes.json();
-        if (data.city) city = data.city;
-        if (data.ip) clientIp = data.ip;
-      }
-    } catch (e) {
-      console.warn('ipapi zablokowany');
-    }
-
-    // 3. Pancerne źródło zapasowe: Wyciąganie nazwy miasta bezpośrednio ze strefy czasowej systemu
-    if (!city) {
-      try {
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Warsaw';
-        const rawCity = tz.split('/')[1] || 'Warszawa';
-        city = rawCity.replace(/_/g, ' ');
-      } catch (e) {
-        city = 'Warszawa';
-      }
-    }
-
-    return { ip: clientIp, city };
+      // Bezpośredni odczyt z GPS urządzenia z 3-sekundowym limitem czasu
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=pl`);
+            if (res.ok) {
+              const data = await res.json();
+              const detectedCity = data.city || data.locality || data.principalSubdivision;
+              if (detectedCity) {
+                return resolve(detectedCity);
+              }
+            }
+            resolve(fallbackCity);
+          } catch (e) {
+            resolve(fallbackCity);
+          }
+        },
+        () => resolve(fallbackCity), // Jeśli użytkownik odmówi uprawnień GPS
+        { timeout: 3000, enableHighAccuracy: false }
+      );
+    });
   };
 
   const handleSubmit = async () => {
@@ -203,13 +196,14 @@ const Bets = () => {
     const currentKolejka = kolejki[currentKolejkaIndex];
     const userSubmittedBets = submittedData[selectedUser] || {};
 
-    const { ip, city } = await fetchLocationData();
+    // Pobranie miejscowości
+    const cityName = await getCityLocation();
 
     const metadata = {
       timestamp: new Date().toISOString(),
-      ip: ip,
+      ip: 'Zabezpieczone',
       country: 'Polska',
-      city: city
+      city: cityName
     };
 
     const newBetsToSubmit = currentKolejka?.games.reduce((acc, game) => {
@@ -245,7 +239,7 @@ const Bets = () => {
         setModalConfig({
           show: true,
           title: "Sukces",
-          message: `Dzięki ${selectedUser}, Zakłady zostały pomyślnie przesłane! Lokalizacja: ${city}`,
+          message: `Dzięki ${selectedUser}, Zakłady zostały pomyślnie przesłane! Miejscowość: ${cityName}`,
           type: "success"
         });
       })
