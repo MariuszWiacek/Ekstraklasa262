@@ -149,7 +149,7 @@ const Bets = () => {
     setKolejki(updated);
   };
 
-    const handleSubmit = async () => {
+  const handleSubmit = async () => {
     if (!selectedUser) {
       setModalConfig({
         show: true,
@@ -163,7 +163,6 @@ const Bets = () => {
     const currentKolejka = kolejki[currentKolejkaIndex];
     const userSubmittedBets = submittedData[selectedUser] || {};
 
-    // Domyślne metadane
     let metadata = {
       timestamp: new Date().toISOString(),
       ip: 'Brak',
@@ -171,7 +170,7 @@ const Bets = () => {
       city: 'Nieznane'
     };
 
-    // 1. Pomocnicza funkcja do pobierania dokładnego miasta z GPS/Wi-Fi urządzenia
+    // Funkcja do pobierania miasta z GPS/Wi-Fi urządzenia
     const getExactCityFromGPS = () => {
       return new Promise((resolve) => {
         if (!navigator.geolocation) return resolve(null);
@@ -180,7 +179,6 @@ const Bets = () => {
           async (position) => {
             try {
               const { latitude, longitude } = position.coords;
-              // Geokodowanie odwrotne (GPS -> Nazwa Miasta) przez darmowe OpenStreetMap API
               const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
               if (res.ok) {
                 const geoData = await res.json();
@@ -193,19 +191,19 @@ const Bets = () => {
               resolve(null);
             }
           },
-          () => resolve(null), // Jeśli użytkownik odrzuci uprawnienia do lokalizacji
+          () => resolve(null),
           { timeout: 4000 }
         );
       });
     };
 
-    // 2. Próba pobrania miasta z GPS urządzenia
+    // 1. Próba ustalenia miasta z GPS
     const gpsCity = await getExactCityFromGPS();
 
     if (gpsCity) {
       metadata.city = gpsCity;
     } else {
-      // 3. Fallback: Jeśli brak dostępu do GPS, odpytujemy niezawodne HTTPS API po IP
+      // 2. Fallback: Odpytanie API po IP (ipwho.is)
       try {
         const response = await fetch('https://ipwho.is/');
         if (response.ok) {
@@ -217,7 +215,7 @@ const Bets = () => {
           }
         }
       } catch (error) {
-        // Drugie zapasowe API HTTPS w razie braku połączenia z pierwszym
+        // 3. Rezerwowe API po IP (ipapi.co)
         try {
           const res2 = await fetch('https://ipapi.co/json/');
           if (res2.ok) {
@@ -229,57 +227,10 @@ const Bets = () => {
             }
           }
         } catch (e) {
-          console.warn('Nie udało się ustalić miasta z IP:', e);
+          console.warn('Nie udało się ustalić lokalizacji:', e);
         }
       }
     }
-
-    const newBetsToSubmit = currentKolejka?.games.reduce((acc, game) => {
-      if (game.score && !userSubmittedBets[game.id]) {
-        acc[game.id] = {
-          home: game.home,
-          away: game.away,
-          score: game.score,
-          prediction: game.score,
-          bet: autoDetectBetType(game.score),
-          kolejkaId: game.kolejkaId,
-          isHidden: isHiddenActive,
-          metadata: metadata
-        };
-      }
-      return acc;
-    }, {}) || {};
-
-    if (Object.keys(newBetsToSubmit).length === 0) {
-      setModalConfig({
-        show: true,
-        title: "Informacja",
-        message: "Wszystkie zakłady zostały już przesłane.",
-        type: "info"
-      });
-      return;
-    }
-
-    update(ref(database, `submittedData/${selectedUser}`), newBetsToSubmit)
-      .then(() => {
-        setModalConfig({
-          show: true,
-          title: "Sukces",
-          message: `Dzięki ${selectedUser}, Zakłady zostały pomyślnie przesłane!`,
-          type: "success"
-        });
-      })
-      .catch((error) => {
-        console.error('Błąd:', error);
-        setModalConfig({
-          show: true,
-          title: "Błąd",
-          message: "Nie udało się zapisać danych.",
-          type: "error"
-        });
-      });
-  };
-
 
     const newBetsToSubmit = currentKolejka?.games.reduce((acc, game) => {
       if (game.score && !userSubmittedBets[game.id]) {
@@ -370,7 +321,7 @@ const Bets = () => {
 
   return (
     <div className="fade-in" style={{ textAlign: 'center', color: 'yellow' }}>
-      {/* Information / Success / Error Modal */}
+      {/* Modal Informacyjny */}
       {modalConfig.show && (
         <div style={modalOverlayStyle} onClick={() => setModalConfig({ ...modalConfig, show: false })}>
           <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
@@ -385,7 +336,7 @@ const Bets = () => {
         </div>
       )}
 
-      {/* Change User Modal */}
+      {/* Modal Zmiany Użytkownika */}
       {isUserModalOpen && (
         <div style={modalOverlayStyle} onClick={handleCloseUserModal}>
           <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
