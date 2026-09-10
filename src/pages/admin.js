@@ -56,7 +56,8 @@ const Admin = () => {
 
     allUsers.forEach((user) => {
       games.forEach((game) => {
-        if (!submittedData[user][game.id]) {
+        const userBet = submittedData[user]?.[game.id];
+        if (!userBet) {
           if (!nonBettorsData[game.id]) {
             nonBettorsData[game.id] = [];
           }
@@ -358,6 +359,87 @@ const Admin = () => {
         Zatwierdź wyniki
       </button>
 
+      {/* SEPARATE AUDIT LOG SECTION BELOW */}
+      <hr style={{ margin: '40px 0', borderColor: '#444' }} />
+
+      <h3 className="text-lg font-bold mb-4" style={{ color: '#00aaff' }}>
+        Szczegóły obstawień (Audyt metadata):
+      </h3>
+
+      <div style={{ textAlign: 'left', marginTop: '20px' }}>
+        {getPagedGames(currentKolejkaIndex).map((game) => {
+          const gameBets = Object.keys(submittedData)
+            .filter((user) => submittedData[user]?.[game.id])
+            .map((user) => {
+              const betData = submittedData[user][game.id];
+              const isObject = typeof betData === 'object' && betData !== null;
+              return {
+                user,
+                prediction: isObject ? betData.prediction : betData,
+                metadata: isObject ? betData.metadata : null,
+              };
+            });
+
+          if (gameBets.length === 0) return null;
+
+          return (
+            <div
+              key={game.id}
+              style={{
+                backgroundColor: '#16191c',
+                padding: '12px',
+                borderRadius: '6px',
+                marginBottom: '15px',
+                border: '1px solid #333',
+              }}
+            >
+              <h4 style={{ color: 'gold', margin: '0 0 8px 0', fontSize: '14px' }}>
+                {game.home} vs {game.away} ({game.date})
+              </h4>
+
+              <table
+                style={{
+                  width: '100%',
+                  fontSize: '12px',
+                  borderCollapse: 'collapse',
+                }}
+              >
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #444', color: '#888' }}>
+                    <th style={{ textAlign: 'left', padding: '4px' }}>Użytkownik</th>
+                    <th style={{ textAlign: 'left', padding: '4px' }}>Typ</th>
+                    <th style={{ textAlign: 'left', padding: '4px' }}>Data i czas</th>
+                    <th style={{ textAlign: 'left', padding: '4px' }}>IP</th>
+                    <th style={{ textAlign: 'left', padding: '4px' }}>Lokalizacja</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {gameBets.map((b, idx) => {
+                    const meta = b.metadata;
+                    const time = meta?.timestamp
+                      ? new Date(meta.timestamp).toLocaleString()
+                      : 'Brak';
+                    const ip = meta?.ip || 'Brak';
+                    const loc = meta
+                      ? `${meta.city || '?'}, ${meta.country || '?'}`
+                      : 'Brak';
+
+                    return (
+                      <tr key={idx} style={{ borderBottom: '1px solid #222' }}>
+                        <td style={{ padding: '4px', color: '#fff' }}>{b.user}</td>
+                        <td style={{ padding: '4px', color: '#00ffcc' }}>{b.prediction}</td>
+                        <td style={{ padding: '4px', color: '#aaa' }}>{time}</td>
+                        <td style={{ padding: '4px', color: '#aaa' }}>{ip}</td>
+                        <td style={{ padding: '4px', color: '#aaa' }}>{loc}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          );
+        })}
+      </div>
 
     </div>
 
