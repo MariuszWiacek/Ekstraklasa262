@@ -21,7 +21,6 @@ const database = getDatabase();
 
 const Admin = () => {
   const [submittedData, setSubmittedData] = useState({});
-  const [selectedUser, setSelectedUser] = useState('');
 
   useEffect(() => {
     const submittedRef = ref(database, 'submittedData');
@@ -29,131 +28,91 @@ const Admin = () => {
       const data = snapshot.val();
       if (data) {
         setSubmittedData(data);
-        // Automatycznie ustaw pierwszego gracza jeśli żaden nie jest wybrany
-        const users = Object.keys(data);
-        if (users.length > 0 && !selectedUser) {
-          setSelectedUser(users[0]);
-        }
       }
     });
 
     return () => unsubscribe();
-  }, [selectedUser]);
-
-  const activeUserData = submittedData[selectedUser] || {};
-  // Wyciągamy metadane z pierwszego wysłanego zakładu wybranego użytkownika
-  const firstBetKey = Object.keys(activeUserData)[0];
-  const userMetadata = firstBetKey ? activeUserData[firstBetKey]?.metadata : null;
+  }, []);
 
   return (
-    <div style={{ padding: '20px', color: '#fff', backgroundColor: '#1a1a1a', minHeight: '100vh', fontFamily: 'Arial, sans-serif' }}>
-      <h1 style={{ textAlign: 'center', color: '#gold' }}>Panel Administratora</h1>
+    <div style={{ padding: '10px', fontSize: '11px', color: '#fff' }}>
+      <h2 style={{ textAlign: 'center', fontSize: '14px', marginBottom: '15px' }}>Panel Administratora</h2>
 
-      {/* Wybór użytkownika */}
-      <div style={{ textAlign: 'center', marginBottom: '25px' }}>
-        <label style={{ marginRight: '10px', fontSize: '16px' }}>Wybierz gracza:</label>
-        <select
-          value={selectedUser}
-          onChange={(e) => setSelectedUser(e.target.value)}
-          style={{ padding: '8px 15px', borderRadius: '8px', fontSize: '15px', fontWeight: 'bold' }}
-        >
-          {Object.keys(submittedData).map((user) => (
-            <option key={user} value={user}>{user}</option>
-          ))}
-        </select>
-      </div>
+      {Object.keys(submittedData).map((user) => {
+        const userBets = submittedData[user] || {};
+        const firstBetKey = Object.keys(userBets)[0];
+        const metadata = firstBetKey ? userBets[firstBetKey]?.metadata : null;
 
-      {selectedUser && (
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          {/* Sekcja Metadanych Technicznych */}
-          <div style={{ backgroundColor: '#2a2a2a', border: '1px solid #444', borderRadius: '12px', padding: '20px', marginBottom: '25px' }}>
-            <h3 style={{ marginTop: 0, color: '#007bff', borderBottom: '1px solid #444', paddingBottom: '10px' }}>
-              📊 Metadane sesji: {selectedUser}
+        return (
+          <div 
+            key={user} 
+            style={{ 
+              backgroundColor: '#1e1e1e', 
+              border: '1px solid #333', 
+              borderRadius: '8px', 
+              padding: '10px', 
+              marginBottom: '15px' 
+            }}
+          >
+            <h3 style={{ color: 'gold', fontSize: '12px', margin: '0 0 8px 0', borderBottom: '1px solid #333', paddingBottom: '4px' }}>
+              Gracz: {user}
             </h3>
 
-            {userMetadata ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px', fontSize: '14px' }}>
-                <div>
-                  <strong>🕒 Czas wysłania:</strong>
-                  <br />
-                  <span style={{ color: '#aaa' }}>{new Date(userMetadata.timestamp).toLocaleString('pl-PL')}</span>
-                </div>
-                <div>
-                  <strong>🌍 Strefa czasowa:</strong>
-                  <br />
-                  <span style={{ color: '#aaa' }}>{userMetadata.timeZone || 'Brak'}</span>
-                </div>
-                <div>
-                  <strong>🔑 ID Urządzenia (Hash):</strong>
-                  <br />
-                  <span style={{ color: '#28a745', fontWeight: 'bold' }}>{userMetadata.deviceFingerprint || 'Brak'}</span>
-                </div>
-                <div>
-                  <strong>📱 Typ sprzętu:</strong>
-                  <br />
-                  <span style={{ color: '#aaa' }}>{userMetadata.deviceType || 'Brak'}</span>
-                </div>
-                <div>
-                  <strong>🖥️ Rozdzielczość:</strong>
-                  <br />
-                  <span style={{ color: '#aaa' }}>{userMetadata.screenResolution || 'Brak'}</span>
-                </div>
-                <div>
-                  <strong>🚀 Tryb uruchomienia:</strong>
-                  <br />
-                  <span style={{ color: '#aaa' }}>{userMetadata.appMode || 'Brak'}</span>
-                </div>
-                <div>
-                  <strong>🌐 Język systemu:</strong>
-                  <br />
-                  <span style={{ color: '#aaa' }}>{userMetadata.language || 'Brak'}</span>
-                </div>
-              </div>
-            ) : (
-              <p style={{ color: '#888', margin: 0 }}>Brak zarejestrowanych metadanych dla tego gracza.</p>
-            )}
-          </div>
-
-          {/* Tabela Przesłanych Typów */}
-          <div style={{ backgroundColor: '#2a2a2a', border: '1px solid #444', borderRadius: '12px', padding: '20px' }}>
-            <h3 style={{ marginTop: 0, color: '#28a745', borderBottom: '1px solid #444', paddingBottom: '10px' }}>
-              ⚽ Przesłane zakłady
-            </h3>
-
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'center' }}>
+            {/* Tabela typów ze zmniejszoną czcionką */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '8px', fontSize: '10px' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #555', color: '#ffc107' }}>
-                  <th style={{ padding: '8px' }}>Mecz</th>
-                  <th style={{ padding: '8px' }}>Typowany wynik</th>
-                  <th style={{ padding: '8px' }}>1X2</th>
-                  <th style={{ padding: '8px' }}>Status</th>
+                <tr style={{ color: '#aaa', borderBottom: '1px solid #444', textAlign: 'left' }}>
+                  <th style={{ padding: '3px' }}>Mecz</th>
+                  <th style={{ padding: '3px', textAlign: 'center' }}>Typ</th>
+                  <th style={{ padding: '3px', textAlign: 'center' }}>1X2</th>
+                  <th style={{ padding: '3px', textAlign: 'center' }}>Widoczność</th>
                 </tr>
               </thead>
               <tbody>
-                {Object.keys(activeUserData).map((gameId) => {
-                  const bet = activeUserData[gameId];
+                {Object.keys(userBets).map((gameId) => {
+                  const bet = userBets[gameId];
                   const game = gameData.find((g) => String(g.id) === String(gameId));
 
                   return (
-                    <tr key={gameId} style={{ borderBottom: '1px solid #333' }}>
-                      <td style={{ padding: '10px' }}>
+                    <tr key={gameId} style={{ borderBottom: '1px solid #2a2a2a' }}>
+                      <td style={{ padding: '3px' }}>
                         {game ? `${game.home} - ${game.away}` : `Mecz #${gameId}`}
                       </td>
-                      <td style={{ padding: '10px', fontWeight: 'bold', color: '#007bff' }}>
+                      <td style={{ padding: '3px', textAlign: 'center', fontWeight: 'bold', color: '#007bff' }}>
                         {bet.score || bet.prediction}
                       </td>
-                      <td style={{ padding: '10px' }}>{bet.bet}</td>
-                      <td style={{ padding: '10px' }}>
-                        {bet.isHidden ? '🔒 Ukryty' : '👁️ Widoczny'}
+                      <td style={{ padding: '3px', textAlign: 'center' }}>{bet.bet}</td>
+                      <td style={{ padding: '3px', textAlign: 'center' }}>
+                        {bet.isHidden ? '🔒' : '👁️'}
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+
+            {/* Dolny panel z metadanymi technologicznymi i czasem */}
+            {metadata ? (
+              <div style={{ 
+                backgroundColor: '#121212', 
+                padding: '6px 8px', 
+                borderRadius: '5px', 
+                fontSize: '9px', 
+                color: '#888',
+                lineHeight: '1.4'
+              }}>
+                <div><strong>📅 Czas:</strong> {new Date(metadata.timestamp).toLocaleString('pl-PL')}</div>
+                <div><strong>🌍 Strefa czasowa:</strong> {metadata.timeZone || 'Brak'}</div>
+                <div><strong>🔑 Hash Sprzętu:</strong> <span style={{ color: '#28a745' }}>{metadata.deviceFingerprint || 'Brak'}</span></div>
+                <div><strong>💻 Urządzenie:</strong> {metadata.deviceType || 'Brak'} ({metadata.screenResolution || 'Brak'})</div>
+                <div><strong>🚀 Tryb:</strong> {metadata.appMode || 'Brak'} | <strong>Język:</strong> {metadata.language || 'Brak'}</div>
+              </div>
+            ) : (
+              <div style={{ fontSize: '9px', color: '#666', italic: 'true' }}>Brak zgromadzonych metadanych.</div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })}
     </div>
   );
 };
