@@ -56,7 +56,6 @@ const Bets = () => {
   const [isHiddenActive, setIsHiddenActive] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Modal użytkownika
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
@@ -145,39 +144,35 @@ const Bets = () => {
     setKolejki(updated);
   };
 
-  // Metoda pobierania lokalizacji - Bezpieczny podwójny mechanizm
-  const getCityLocation = () => {
-    return new Promise((resolve) => {
-      // Domyślne miasto wydobyte z wbudowanej w urządzenie strefy czasowej
-      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-      const fallbackCity = timeZone.includes('/') ? timeZone.split('/')[1].replace('_', ' ') : 'Polska';
+  // Generowanie unikalnego kodu urządzenia (Fingerprint)
+  const generateDeviceHash = () => {
+    const str = `${navigator.userAgent}_${window.screen.width}x${window.screen.height}_${navigator.language}_${navigator.hardwareConcurrency}`;
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash |= 0;
+    }
+    return 'DEV-' + Math.abs(hash).toString(16).toUpperCase();
+  };
 
-      if (!navigator.geolocation) {
-        return resolve(fallbackCity);
-      }
+  // Metadane pobierane natychmiast z poziomu przeglądarki
+  const getExtendedMetadata = () => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Warsaw';
+    
+    // Detekcja platformy/urządzenia
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const platform = isMobile ? (navigator.userAgent.includes('iPhone') ? 'iOS' : 'Android') : 'Komputer';
 
-      // Bezpośredni odczyt z GPS urządzenia z 3-sekundowym limitem czasu
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const { latitude, longitude } = position.coords;
-            const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=pl`);
-            if (res.ok) {
-              const data = await res.json();
-              const detectedCity = data.city || data.locality || data.principalSubdivision;
-              if (detectedCity) {
-                return resolve(detectedCity);
-              }
-            }
-            resolve(fallbackCity);
-          } catch (e) {
-            resolve(fallbackCity);
-          }
-        },
-        () => resolve(fallbackCity), // Jeśli użytkownik odmówi uprawnień GPS
-        { timeout: 3000, enableHighAccuracy: false }
-      );
-    });
+    return {
+      timestamp: new Date().toISOString(),
+      timeZone: tz,
+      deviceFingerprint: generateDeviceHash(),
+      deviceType: platform,
+      screenResolution: `${window.screen.width}x${window.screen.height}`,
+      appMode: window.matchMedia('(display-mode: standalone)').matches ? 'Aplikacja PWA' : 'Przeglądarka',
+      language: navigator.language || 'pl-PL'
+    };
   };
 
   const handleSubmit = async () => {
@@ -196,15 +191,7 @@ const Bets = () => {
     const currentKolejka = kolejki[currentKolejkaIndex];
     const userSubmittedBets = submittedData[selectedUser] || {};
 
-    // Pobranie miejscowości
-    const cityName = await getCityLocation();
-
-    const metadata = {
-      timestamp: new Date().toISOString(),
-      ip: 'Zabezpieczone',
-      country: 'Polska',
-      city: cityName
-    };
+    const metadata = getExtendedMetadata();
 
     const newBetsToSubmit = currentKolejka?.games.reduce((acc, game) => {
       if (game.score && !userSubmittedBets[game.id]) {
@@ -239,7 +226,7 @@ const Bets = () => {
         setModalConfig({
           show: true,
           title: "Sukces",
-          message: `Dzięki ${selectedUser}, Zakłady zostały pomyślnie przesłane! Miejscowość: ${cityName}`,
+          message: `Dzięki ${selectedUser}, zakłady zostały pomyślnie przesłane!`,
           type: "success"
         });
       })
