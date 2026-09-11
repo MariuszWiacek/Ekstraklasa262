@@ -20,7 +20,7 @@ const Admin = () => {
     return team ? team.logo : '';
   };
 
-  // Funkcja pomocnicza do wyciągania tylko nazwy miasta ze strefy czasowej (np. Europe/Warsaw -> Warszawa)
+  // Wyciąganie nazwy miasta ze strefy czasowej
   const getCleanCity = (timeZone) => {
     if (!timeZone) return 'Brak lokalizacji';
     const rawCity = timeZone.includes('/') ? timeZone.split('/')[1] : timeZone;
@@ -163,6 +163,100 @@ const Admin = () => {
 
   const pagedGames = getPagedGames(currentKolejkaIndex);
 
+  // --- LOGIKA WYKRYWANIA NIEPRAWIDŁOWOŚCI W BIEŻĄCEJ KOLEJCE ---
+  const currentWarnings = [];
+
+  // 1. Wspólne urządzenie dla różnych graczy
+  pagedGames.forEach((game) => {
+    const placedBets = Object.keys(submittedData)
+      .filter((user) => submittedData[user]?.[game.id])
+      .map((user) => {
+        const betData = submittedData[user][game.id];
+        const isObject = typeof betData === 'object' && betData !== null;
+        return {
+          user,
+          metadata: isObject ? betData.metadata : null,
+        };
+      });
+
+    const checkedPairs = new Set();
+
+    placedBets.forEach((b1) => {
+      placedBets.forEach((b2) => {
+        if (
+          b1.user !== b2.user &&
+          b1.metadata?.deviceFingerprint &&
+          b1.metadata?.deviceFingerprint === b2.metadata?.deviceFingerprint
+        ) {
+          const pairKey = [b1.user, b2.user].sort().join('-') + `-${game.id}`;
+          if (!checkedPairs.has(pairKey)) {
+            checkedPairs.add(pairKey);
+            currentWarnings.push(
+              `Mecz ${game.home} vs ${game.away}: Gracze **${b1.user}** oraz **${b2.user}** wysłali typy z tego samego urządzenia.`
+            );
+          }
+        }
+      });
+    });
+  });
+
+  // 2. Analiza typów przypisanych do konkretnych użytkowników (Strefy czasowe & Przełączanie urządzeń)
+  const allUsers = Object.keys(submittedData);
+
+  allUsers.forEach((user) => {
+    const userBetsInKolejka = [];
+
+    pagedGames.forEach((game) => {
+      const betData = submittedData[user]?.[game.id];
+      if (betData && typeof betData === 'object' && betData.metadata) {
+        userBetsInKolejka.push({
+          gameId: game.id,
+          gameTitle: `${game.home} vs ${game.away}`,
+          metadata: betData.metadata,
+        });
+      }
+    });
+
+    if (userBetsInKolejka.length > 0) {
+      // Wykrywanie zmiany strefy czasowej
+      const timeZones = new Set(userBetsInKolejka.map((b) => b.metadata.timeZone).filter(Boolean));
+      if (timeZones.size > 1) {
+        const cities = Array.from(timeZones).map(getCleanCity).join(', ');
+        currentWarnings.push(
+          `Gracz **${user}** zmienił strefę czasową / VPN w trakcie obstawiania kolejki (wykryte lokalizacje: ${cities}).`
+        );
+      }
+
+      // Wykrywanie zbyt szybkiego przełączania urządzeń (< 2 minuty)
+      userBetsInKolejka.sort((a, b) => (a.metadata.timestamp || 0) - (b.metadata.timestamp || 0));
+
+      for (let i = 0; i < userBetsInKolejka.length - 1; i++) {
+        const bet1 = userBetsInKolejka[i];
+        const bet2 = userBetsInKolejka[i + 1];
+
+        if (bet1.metadata.timestamp && bet2.metadata.timestamp) {
+          const diffInMs = Math.abs(bet2.metadata.timestamp - bet1.metadata.timestamp);
+          const diffInMinutes = diffInMs / (1000 * 60);
+
+          const fp1 = bet1.metadata.deviceFingerprint;
+          const fp2 = bet2.metadata.deviceFingerprint;
+          const dev1 = bet1.metadata.deviceType;
+          const dev2 = bet2.metadata.deviceType;
+
+          const differentDevice = (fp1 && fp2 && fp1 !== fp2) || (dev1 && dev2 && dev1 !== dev2);
+
+          if (diffInMinutes < 2 && differentDevice) {
+            currentWarnings.push(
+              `Gracz **${user}** zmienił urządzenie w odstępie poniżej 2 minut (${Math.round(
+                diffInMinutes * 60
+              )} sek.) pomiędzy meczami: ${bet1.gameTitle} (${dev1 || 'Urządzenie 1'}) a ${bet2.gameTitle} (${dev2 || 'Urządzenie 2'}).`
+            );
+          }
+        }
+      }
+    }
+  });
+
   return (
     <div
       style={{
@@ -182,7 +276,7 @@ const Admin = () => {
         label="Kolejka"
       />
 
-      {/* GŁÓWNA TABELA DO WPROWADZANIA WYNIKÓW */}
+      {/* TABELA DO WPROWADZANIA WYNIKÓW */}
       <table
         style={{
           width: '100%',
@@ -287,7 +381,7 @@ const Admin = () => {
         Zatwierdź wyniki
       </button>
 
-      {/* SEKCJA SZCZEGÓŁÓW I METADANYCH NA DOLE */}
+      {/* SEKCJA SZCZEGÓŁÓW NA DOLE */}
       <div
         style={{
           marginTop: '40px',
@@ -343,15 +437,6 @@ const Admin = () => {
                   const city = getCleanCity(meta?.timeZone);
                   const deviceType = meta?.deviceType || 'Urządzenie';
                   const isPWA = meta?.appMode === 'Aplikacja PWA';
-                  const deviceHash = meta?.deviceFingerprint;
-
-                  // Wykrywanie czy ktoś użył tego samego urządzenia dla tego meczu
-                  const duplicateUser = placedBets.find(
-                    (other) =>
-                      other.user !== b.user &&
-                      other.metadata?.deviceFingerprint &&
-                      other.metadata?.deviceFingerprint === deviceHash
-                  );
 
                   return (
                     <li
@@ -368,20 +453,6 @@ const Admin = () => {
                       <span style={{ color: '#aaa' }}>
                         🕒 godz. {formattedTime} | 📍 {city} | 📱 {deviceType} {isPWA ? '(Aplikacja)' : '(Przeglądarka)'}
                       </span>
-                      {duplicateUser && (
-                        <span
-                          style={{
-                            marginLeft: '8px',
-                            color: '#ff4d4d',
-                            fontWeight: 'bold',
-                            backgroundColor: '#330000',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                          }}
-                        >
-                          ⚠️ Wspólne urządzenie z: {duplicateUser.user}
-                        </span>
-                      )}
                     </li>
                   );
                 })}
@@ -389,6 +460,33 @@ const Admin = () => {
             </div>
           );
         })}
+
+        {/* SEKCJA UWAG I OSTRZEŻEŃ NA SAMYM DOLE */}
+        <div
+          style={{
+            marginTop: '25px',
+            backgroundColor: '#211212',
+            border: '1px solid #5c2424',
+            borderRadius: '6px',
+            padding: '12px',
+          }}
+        >
+          <h4 style={{ color: '#ff4d4d', margin: '0 0 8px 0', fontSize: '14px' }}>
+            ⚠️ Uwagi i Ostrzeżenia Systemowe:
+          </h4>
+
+          {currentWarnings.length > 0 ? (
+            <ul style={{ margin: '0', paddingLeft: '20px', color: '#ffc107', fontSize: '12px' }}>
+              {currentWarnings.map((warn, idx) => (
+                <li key={idx} style={{ marginBottom: '6px' }} dangerouslySetInnerHTML={{ __html: warn.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+              ))}
+            </ul>
+          ) : (
+            <div style={{ color: '#28a745', fontSize: '12px' }}>
+              Brak zastrzeżeń. Wszystkie typy w tej kolejce wyglądają w pełni prawidłowo.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
