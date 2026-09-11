@@ -154,6 +154,8 @@ const Admin = () => {
     );
   }
 
+  const pagedGames = getPagedGames(currentKolejkaIndex);
+
   return (
     <div
       style={{
@@ -173,138 +175,91 @@ const Admin = () => {
         label="Kolejka"
       />
 
+      {/* GŁÓWNA TABELA DO WPROWADZANIA WYNIKÓW */}
       <table
         style={{
           width: '100%',
           border: '0.5px solid #444',
           borderCollapse: 'collapse',
-          marginTop: '5%',
+          marginTop: '20px',
         }}
       >
         <thead>
-          <tr>
-            <th></th>
-            <th></th>
-            <th></th>
+          <tr style={{ backgroundColor: '#111' }}>
+            <th>Mecz</th>
+            <th>Gospodarz</th>
+            <th>-</th>
+            <th>Gość</th>
             <th>Wynik</th>
           </tr>
         </thead>
 
         <tbody>
-          {getPagedGames(currentKolejkaIndex).map((game, index) => {
-            // Find all users who placed a bet on this specific game
-            const placedBets = Object.keys(submittedData)
-              .filter((user) => submittedData[user]?.[game.id])
-              .map((user) => {
-                const betData = submittedData[user][game.id];
-                const isObject = typeof betData === 'object' && betData !== null;
-                return {
-                  user,
-                  prediction: isObject ? betData.prediction : betData,
-                  metadata: isObject ? betData.metadata : null,
-                };
-              });
+          {pagedGames.map((game, index) => (
+            <React.Fragment key={index}>
+              <tr>
+                <td
+                  colSpan="5"
+                  className="date"
+                  style={{
+                    textAlign: 'left',
+                    color: 'gold',
+                    fontSize: '11px',
+                    paddingLeft: '10px',
+                    backgroundColor: '#1a1d20',
+                  }}
+                >
+                  {game.date} - {game.kickoff}
+                </td>
+              </tr>
 
-            return (
-              <React.Fragment key={index}>
-                <tr>
-                  <td
-                    colSpan="4"
-                    className="date"
+              <tr style={{ borderBottom: '1px solid #444' }}>
+                <td style={{ fontSize: '12px', color: '#888' }}>#{game.id}</td>
+                <td style={{ textAlign: 'center' }}>
+                  <img src={getTeamLogo(game.home)} alt="" className="logo" style={{ marginRight: '5px' }} />
+                  {game.home}
+                </td>
+
+                <td>-</td>
+
+                <td>
+                  <img src={getTeamLogo(game.away)} alt="" className="logo" style={{ marginRight: '5px' }} />
+                  {game.away}
+                </td>
+
+                <td>
+                  <input
+                    type="text"
+                    placeholder="x:x"
+                    value={resultsInput[game.id] || ''}
+                    onChange={(e) => handleResultChange(game.id, e.target.value)}
+                    maxLength="3"
                     style={{
-                      textAlign: 'left',
-                      color: 'gold',
-                      fontSize: '10px',
-                      paddingLeft: '10%',
+                      width: '50px',
+                      color: 'blue',
+                      textAlign: 'center',
+                      fontWeight: 'bold',
                     }}
-                  >
-                    {game.date} - {game.kickoff}
+                  />
+                </td>
+              </tr>
+
+              {/* Status nieobstawiających */}
+              {nonBettors[game.id]?.length === Object.keys(submittedData).length ? (
+                <tr>
+                  <td colSpan="5" style={{ color: 'green', fontSize: '11px', padding: '4px' }}>
+                    <strong>Nikt jeszcze nie obstawił</strong>
                   </td>
                 </tr>
-
-                <tr style={{ borderBottom: '1px solid #444' }}>
-                  <td style={{ textAlign: 'center' }}>
-                    <img src={getTeamLogo(game.home)} alt="" className="logo" />
-                    {game.home}
-                  </td>
-
-                  <td>-</td>
-
-                  <td>
-                    <img src={getTeamLogo(game.away)} alt="" className="logo" />
-                    {game.away}
-                  </td>
-
-                  <td>
-                    <input
-                      type="text"
-                      placeholder="x:x"
-                      value={resultsInput[game.id] || ''}
-                      onChange={(e) => handleResultChange(game.id, e.target.value)}
-                      maxLength="3"
-                      style={{
-                        width: '50px',
-                        color: 'blue',
-                        textAlign: 'center',
-                      }}
-                    />
+              ) : nonBettors[game.id]?.length > 0 ? (
+                <tr>
+                  <td colSpan="5" style={{ color: '#ff6b6b', fontSize: '11px', padding: '4px' }}>
+                    <strong>Nie obstawili: {nonBettors[game.id].join(', ')}</strong>
                   </td>
                 </tr>
-
-                {/* Zmodernizowany dolny pasek metadanych */}
-                {placedBets.length > 0 && (
-                  <tr>
-                    <td colSpan="4" style={{ padding: '8px', backgroundColor: '#111315' }}>
-                      <div style={{ fontSize: '11px', textAlign: 'left' }}>
-                        <strong style={{ color: '#00aaff' }}>Złożone typy i urządzenia:</strong>
-                        <ul style={{ listStyleType: 'none', paddingLeft: '5px', margin: '5px 0' }}>
-                          {placedBets.map((b, i) => {
-                            const meta = b.metadata;
-                            const formattedTime = meta?.timestamp
-                              ? new Date(meta.timestamp).toLocaleString('pl-PL')
-                              : 'Brak czasu';
-                            
-                            const timeZone = meta?.timeZone || 'Nieznana';
-                            const deviceHash = meta?.deviceFingerprint || 'Brak HASH';
-                            const deviceType = meta?.deviceType || 'Nieznany';
-                            const appMode = meta?.appMode || 'Przeglądarka';
-                            const resolution = meta?.screenResolution || '';
-
-                            return (
-                              <li key={i} style={{ marginBottom: '6px', color: '#ccc', borderBottom: '1px solid #222', paddingBottom: '4px' }}>
-                                <strong style={{ color: '#fff', fontSize: '12px' }}>{b.user}</strong>: <span style={{ color: '#ffc107', fontWeight: 'bold' }}>{b.prediction}</span> |{' '}
-                                <span style={{ color: '#aaa' }}>
-                                  🕒 {formattedTime} ({timeZone}) |{' '}
-                                  📱 <span style={{ color: '#28a745', fontWeight: 'bold' }}>{deviceType}</span> {resolution && `(${resolution})`} |{' '}
-                                  🚀 {appMode} |{' '}
-                                  🔑 ID: <span style={{ color: '#17a2b8' }}>{deviceHash}</span>
-                                </span>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-
-                {/* Non-bettors Status */}
-                {nonBettors[game.id]?.length === Object.keys(submittedData).length ? (
-                  <tr>
-                    <td colSpan="4" style={{ color: 'green', fontSize: '11px', padding: '4px' }}>
-                      <strong>Nikt jeszcze nie obstawił</strong>
-                    </td>
-                  </tr>
-                ) : nonBettors[game.id]?.length > 0 ? (
-                  <tr>
-                    <td colSpan="4" style={{ color: 'red', fontSize: '11px', padding: '4px' }}>
-                      <strong>Nie obstawili: {nonBettors[game.id].join(', ')}</strong>
-                    </td>
-                  </tr>
-                ) : null}
-              </React.Fragment>
-            );
-          })}
+              ) : null}
+            </React.Fragment>
+          ))}
         </tbody>
       </table>
 
@@ -314,15 +269,119 @@ const Admin = () => {
           backgroundColor: 'green',
           color: 'white',
           fontWeight: 'bold',
-          padding: '10px 20px',
+          padding: '12px 24px',
           borderRadius: '4px',
           border: 'none',
           cursor: 'pointer',
-          marginTop: '10px',
+          marginTop: '20px',
+          marginBottom: '40px',
         }}
       >
         Zatwierdź wyniki
       </button>
+
+      {/* SEKCJA SZCZEGÓŁÓW I METADANYCH NA DOLE */}
+      <div
+        style={{
+          marginTop: '40px',
+          borderTop: '2px solid #555',
+          paddingTop: '20px',
+          textAlign: 'left',
+          backgroundColor: '#16191c',
+          padding: '15px',
+          borderRadius: '8px',
+        }}
+      >
+        <h3 style={{ color: '#00aaff', marginBottom: '15px', fontSize: '16px' }}>
+          📊 Podgląd typów i urządzeń dla bieżącej kolejki
+        </h3>
+
+        {pagedGames.map((game) => {
+          const placedBets = Object.keys(submittedData)
+            .filter((user) => submittedData[user]?.[game.id])
+            .map((user) => {
+              const betData = submittedData[user][game.id];
+              const isObject = typeof betData === 'object' && betData !== null;
+              return {
+                user,
+                prediction: isObject ? betData.prediction : betData,
+                metadata: isObject ? betData.metadata : null,
+              };
+            });
+
+          if (placedBets.length === 0) return null;
+
+          return (
+            <div
+              key={game.id}
+              style={{
+                marginBottom: '15px',
+                padding: '10px',
+                backgroundColor: '#212529',
+                borderRadius: '6px',
+                borderLeft: '4px solid #00aaff',
+              }}
+            >
+              <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'gold', marginBottom: '6px' }}>
+                {game.home} vs {game.away} ({game.date})
+              </div>
+
+              <ul style={{ listStyleType: 'none', paddingLeft: '0', margin: '0' }}>
+                {placedBets.map((b, i) => {
+                  const meta = b.metadata;
+                  const formattedTime = meta?.timestamp
+                    ? new Date(meta.timestamp).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })
+                    : 'Brak godz.';
+
+                  const deviceType = meta?.deviceType || 'Urządzenie';
+                  const isPWA = meta?.appMode === 'Aplikacja PWA';
+                  const deviceHash = meta?.deviceFingerprint;
+
+                  // Wykrywanie czy ktoś użył tego samego urządzenia dla tego meczu
+                  const duplicateUser = placedBets.find(
+                    (other) =>
+                      other.user !== b.user &&
+                      other.metadata?.deviceFingerprint &&
+                      other.metadata?.deviceFingerprint === deviceHash
+                  );
+
+                  return (
+                    <li
+                      key={i}
+                      style={{
+                        fontSize: '12px',
+                        padding: '4px 0',
+                        borderBottom: '1px solid #333',
+                        color: '#ccc',
+                      }}
+                    >
+                      <strong style={{ color: '#fff' }}>{b.user}</strong> obstawił:{' '}
+                      <span style={{ color: '#ffc107', fontWeight: 'bold' }}>{b.prediction}</span> |{' '}
+                      <span style={{ color: '#aaa' }}>
+                        🕒 godz. {formattedTime} | 📱 {deviceType} {isPWA ? '(Aplikacja)' : '(Przeglądarka)'}
+                      </span>
+                      {duplicateUser && (
+                        <span
+                          style={{
+                            marginLeft: '8px',
+                            color: '#ff4d4d',
+                            fontWeight: 'bold',
+                            backgroundColor: '#330000',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                          }}
+                        >
+                          ⚠️ Wspólne urządzenie z: {duplicateUser.user}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
