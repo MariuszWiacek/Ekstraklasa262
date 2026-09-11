@@ -200,11 +200,26 @@ const Admin = () => {
     });
   });
 
-  // 2. Analiza typów przypisanych do konkretnych użytkowników (Strefy czasowe & Przełączanie urządzeń)
+  // 2. Analiza typów dla poszczególnych graczy (Nowe urządzenie, Strefa czasowa, Przełączanie)
   const allUsers = Object.keys(submittedData);
 
   allUsers.forEach((user) => {
     const userBetsInKolejka = [];
+    const allUserFingerprints = new Set();
+    const allUserDeviceTypes = new Set();
+
+    // Szukanie historycznych urządzeń użytkownika w całej bazie
+    games.forEach((game) => {
+      const betData = submittedData[user]?.[game.id];
+      if (betData && typeof betData === 'object' && betData.metadata) {
+        if (betData.metadata.deviceFingerprint) {
+          allUserFingerprints.add(betData.metadata.deviceFingerprint);
+        }
+        if (betData.metadata.deviceType) {
+          allUserDeviceTypes.add(betData.metadata.deviceType);
+        }
+      }
+    });
 
     pagedGames.forEach((game) => {
       const betData = submittedData[user]?.[game.id];
@@ -218,6 +233,25 @@ const Admin = () => {
     });
 
     if (userBetsInKolejka.length > 0) {
+      // Wykrywanie prośby o sprawdzenie: Nietypowe urządzenie dla danego gracza
+      userBetsInKolejka.forEach((bet) => {
+        const currentFP = bet.metadata.deviceFingerprint;
+        const currentType = bet.metadata.deviceType;
+
+        // Jeśli użytkownik ma już jakąś historię i nagle użyje nowego urządzenia
+        if (
+          allUserFingerprints.size > 1 &&
+          currentFP &&
+          Array.from(allUserFingerprints)[0] !== currentFP
+        ) {
+          currentWarnings.push(
+            `Gracz **${user}** w meczu ${bet.gameTitle} użył nietypowego urządzenia (**${
+              currentType || 'Inne urządzenie'
+            }**), którego rzadko lub nigdy wcześniej nie używał.`
+          );
+        }
+      });
+
       // Wykrywanie zmiany strefy czasowej
       const timeZones = new Set(userBetsInKolejka.map((b) => b.metadata.timeZone).filter(Boolean));
       if (timeZones.size > 1) {
@@ -477,8 +511,12 @@ const Admin = () => {
 
           {currentWarnings.length > 0 ? (
             <ul style={{ margin: '0', paddingLeft: '20px', color: '#ffc107', fontSize: '12px' }}>
-              {currentWarnings.map((warn, idx) => (
-                <li key={idx} style={{ marginBottom: '6px' }} dangerouslySetInnerHTML={{ __html: warn.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+              {Array.from(new Set(currentWarnings)).map((warn, idx) => (
+                <li
+                  key={idx}
+                  style={{ marginBottom: '6px' }}
+                  dangerouslySetInnerHTML={{ __html: warn.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}
+                />
               ))}
             </ul>
           ) : (
