@@ -1,118 +1,328 @@
 import React, { useState, useEffect } from 'react';
-import { getDatabase, ref, onValue } from 'firebase/database';
-import { initializeApp, getApps } from 'firebase/app';
+import { getDatabase, ref, set, onValue } from 'firebase/database';
 import gameData from '../gameData/data.json';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyB3AOrOzAQ-WVMjeZ3ayNwklR7axBgXJ0I",
-  authDomain: "wiosna26-951d6.firebaseapp.com",
-  databaseURL: "https://wiosna26-951d6-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "wiosna26-951d6",
-  storageBucket: "wiosna26-951d6.firebasestorage.app",
-  messagingSenderId: "58145083288",
-  appId: "1:58145083288:web:f2d813d31a64bcdfcba5ed",
-  measurementId: "G-0R5JLD75SW"
-};
-
-if (!getApps().length) {
-  initializeApp(firebaseConfig);
-}
-const database = getDatabase();
+import teamsData from '../gameData/teams.json';
+import Pagination from '../components/Pagination';
 
 const Admin = () => {
+  const [games, setGames] = useState([]);
+  const [resultsInput, setResultsInput] = useState({});
+  const [password, setPassword] = useState('');
+  const [authenticated, setAuthenticated] = useState(false);
+  const [currentKolejkaIndex, setCurrentKolejkaIndex] = useState(0);
   const [submittedData, setSubmittedData] = useState({});
+  const [nonBettors, setNonBettors] = useState({});
 
+  const gamesPerPage = 9;
+
+  const getTeamLogo = (teamName) => {
+    const team = teamsData[teamName];
+    return team ? team.logo : '';
+  };
+
+  // Load games
   useEffect(() => {
-    const submittedRef = ref(database, 'submittedData');
-    const unsubscribe = onValue(submittedRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        setSubmittedData(data);
-      }
-    });
+    setGames(gameData);
+  }, []);
 
+  // Load existing results
+  useEffect(() => {
+    const resultsRef = ref(getDatabase(), 'results');
+    const unsubscribe = onValue(resultsRef, (snapshot) => {
+      const data = snapshot.val();
+      setResultsInput(data || {});
+    });
     return () => unsubscribe();
   }, []);
 
+  // Load submitted bets
+  useEffect(() => {
+    const submittedDataRef = ref(getDatabase(), 'submittedData');
+    const unsubscribe = onValue(submittedDataRef, (snapshot) => {
+      const data = snapshot.val();
+      setSubmittedData(data || {});
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Calculate non bettors
+  useEffect(() => {
+    const nonBettorsData = {};
+    const allUsers = Object.keys(submittedData);
+
+    allUsers.forEach((user) => {
+      games.forEach((game) => {
+        const userBet = submittedData[user]?.[game.id];
+        if (!userBet) {
+          if (!nonBettorsData[game.id]) {
+            nonBettorsData[game.id] = [];
+          }
+          nonBettorsData[game.id].push(user);
+        }
+      });
+    });
+
+    setNonBettors(nonBettorsData);
+  }, [submittedData, games]);
+
+  const handlePasswordSubmit = () => {
+    if (password === 'maniek123') {
+      setAuthenticated(true);
+    } else {
+      alert('Nieprawidłowe hasło. Spróbuj ponownie.');
+    }
+  };
+
+  const handleResultChange = (gameId, result) => {
+    setResultsInput((prev) => ({
+      ...prev,
+      [gameId]: result,
+    }));
+  };
+
+  const handleSubmitResults = () => {
+    set(ref(getDatabase(), 'results'), resultsInput)
+      .then(() => {
+        alert('Wyniki zostały pomyślnie przesłane!');
+      })
+      .catch((error) => {
+        console.error(error);
+        alert('Wystąpił błąd podczas przesyłania wyników.');
+      });
+  };
+
+  const getPagedGames = (page) => {
+    const startIdx = page * gamesPerPage;
+    return games.slice(startIdx, startIdx + gamesPerPage);
+  };
+
+  const totalPages = Math.ceil(games.length / gamesPerPage);
+
+  // Select current kolejka automatically
+  useEffect(() => {
+    if (games.length > 0) {
+      const now = new Date();
+      const nextGameIndex = gameData.findIndex((game) => {
+        const gameDate = new Date(`${game.date}T${game.kickoff}:00+02:00`);
+        return gameDate > now;
+      });
+
+      if (nextGameIndex !== -1) {
+        const kolejkaIndex = Math.floor(nextGameIndex / gamesPerPage);
+        setCurrentKolejkaIndex(kolejkaIndex);
+      } else {
+        const lastPage = Math.floor((games.length - 1) / gamesPerPage);
+        setCurrentKolejkaIndex(lastPage);
+      }
+    }
+  }, [games]);
+
+  if (!authenticated) {
+    return (
+      <div
+        style={{
+          backgroundColor: '#212529ab',
+          color: 'aliceblue',
+          padding: '20px',
+          textAlign: 'center',
+          marginTop: '5%',
+        }}
+      >
+        <h2 className="text-xl font-bold mb-4">Wprowadź hasło:</h2>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="p-2 text-center border border-gray-300 rounded-md"
+        />
+        <button
+          onClick={handlePasswordSubmit}
+          style={{
+            backgroundColor: 'red',
+            color: 'white',
+            fontWeight: 'bold',
+            padding: '10px 20px',
+            borderRadius: '4px',
+            border: 'none',
+            cursor: 'pointer',
+            marginTop: '10px',
+          }}
+        >
+          Zaloguj
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ padding: '10px', fontSize: '11px', color: '#fff' }}>
-      <h2 style={{ textAlign: 'center', fontSize: '14px', marginBottom: '15px' }}>Panel Administratora</h2>
+    <div
+      style={{
+        backgroundColor: '#212529ab',
+        color: 'aliceblue',
+        padding: '20px',
+        textAlign: 'center',
+        marginTop: '5%',
+      }}
+    >
+      <h2 className="text-xl font-bold mb-4">Wprowadź wyniki:</h2>
 
-      {Object.keys(submittedData).map((user) => {
-        const userBets = submittedData[user] || {};
-        const firstBetKey = Object.keys(userBets)[0];
-        const metadata = firstBetKey ? userBets[firstBetKey]?.metadata : null;
+      <Pagination
+        currentPage={currentKolejkaIndex}
+        totalPages={totalPages}
+        onPageChange={setCurrentKolejkaIndex}
+        label="Kolejka"
+      />
 
-        return (
-          <div 
-            key={user} 
-            style={{ 
-              backgroundColor: '#1e1e1e', 
-              border: '1px solid #333', 
-              borderRadius: '8px', 
-              padding: '10px', 
-              marginBottom: '15px' 
-            }}
-          >
-            <h3 style={{ color: 'gold', fontSize: '12px', margin: '0 0 8px 0', borderBottom: '1px solid #333', paddingBottom: '4px' }}>
-              Gracz: {user}
-            </h3>
+      <table
+        style={{
+          width: '100%',
+          border: '0.5px solid #444',
+          borderCollapse: 'collapse',
+          marginTop: '5%',
+        }}
+      >
+        <thead>
+          <tr>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th>Wynik</th>
+          </tr>
+        </thead>
 
-            {/* Tabela typów ze zmniejszoną czcionką */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '8px', fontSize: '10px' }}>
-              <thead>
-                <tr style={{ color: '#aaa', borderBottom: '1px solid #444', textAlign: 'left' }}>
-                  <th style={{ padding: '3px' }}>Mecz</th>
-                  <th style={{ padding: '3px', textAlign: 'center' }}>Typ</th>
-                  <th style={{ padding: '3px', textAlign: 'center' }}>1X2</th>
-                  <th style={{ padding: '3px', textAlign: 'center' }}>Widoczność</th>
+        <tbody>
+          {getPagedGames(currentKolejkaIndex).map((game, index) => {
+            // Find all users who placed a bet on this specific game
+            const placedBets = Object.keys(submittedData)
+              .filter((user) => submittedData[user]?.[game.id])
+              .map((user) => {
+                const betData = submittedData[user][game.id];
+                const isObject = typeof betData === 'object' && betData !== null;
+                return {
+                  user,
+                  prediction: isObject ? betData.prediction : betData,
+                  metadata: isObject ? betData.metadata : null,
+                };
+              });
+
+            return (
+              <React.Fragment key={index}>
+                <tr>
+                  <td
+                    colSpan="4"
+                    className="date"
+                    style={{
+                      textAlign: 'left',
+                      color: 'gold',
+                      fontSize: '10px',
+                      paddingLeft: '10%',
+                    }}
+                  >
+                    {game.date} - {game.kickoff}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {Object.keys(userBets).map((gameId) => {
-                  const bet = userBets[gameId];
-                  const game = gameData.find((g) => String(g.id) === String(gameId));
 
-                  return (
-                    <tr key={gameId} style={{ borderBottom: '1px solid #2a2a2a' }}>
-                      <td style={{ padding: '3px' }}>
-                        {game ? `${game.home} - ${game.away}` : `Mecz #${gameId}`}
-                      </td>
-                      <td style={{ padding: '3px', textAlign: 'center', fontWeight: 'bold', color: '#007bff' }}>
-                        {bet.score || bet.prediction}
-                      </td>
-                      <td style={{ padding: '3px', textAlign: 'center' }}>{bet.bet}</td>
-                      <td style={{ padding: '3px', textAlign: 'center' }}>
-                        {bet.isHidden ? '🔒' : '👁️'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                <tr style={{ borderBottom: '1px solid #444' }}>
+                  <td style={{ textAlign: 'center' }}>
+                    <img src={getTeamLogo(game.home)} alt="" className="logo" />
+                    {game.home}
+                  </td>
 
-            {/* Dolny panel z metadanymi technologicznymi i czasem */}
-            {metadata ? (
-              <div style={{ 
-                backgroundColor: '#121212', 
-                padding: '6px 8px', 
-                borderRadius: '5px', 
-                fontSize: '9px', 
-                color: '#888',
-                lineHeight: '1.4'
-              }}>
-                <div><strong>📅 Czas:</strong> {new Date(metadata.timestamp).toLocaleString('pl-PL')}</div>
-                <div><strong>🌍 Strefa czasowa:</strong> {metadata.timeZone || 'Brak'}</div>
-                <div><strong>🔑 Hash Sprzętu:</strong> <span style={{ color: '#28a745' }}>{metadata.deviceFingerprint || 'Brak'}</span></div>
-                <div><strong>💻 Urządzenie:</strong> {metadata.deviceType || 'Brak'} ({metadata.screenResolution || 'Brak'})</div>
-                <div><strong>🚀 Tryb:</strong> {metadata.appMode || 'Brak'} | <strong>Język:</strong> {metadata.language || 'Brak'}</div>
-              </div>
-            ) : (
-              <div style={{ fontSize: '9px', color: '#666', italic: 'true' }}>Brak zgromadzonych metadanych.</div>
-            )}
-          </div>
-        );
-      })}
+                  <td>-</td>
+
+                  <td>
+                    <img src={getTeamLogo(game.away)} alt="" className="logo" />
+                    {game.away}
+                  </td>
+
+                  <td>
+                    <input
+                      type="text"
+                      placeholder="x:x"
+                      value={resultsInput[game.id] || ''}
+                      onChange={(e) => handleResultChange(game.id, e.target.value)}
+                      maxLength="3"
+                      style={{
+                        width: '50px',
+                        color: 'blue',
+                        textAlign: 'center',
+                      }}
+                    />
+                  </td>
+                </tr>
+
+                {/* Zmodernizowany dolny pasek metadanych */}
+                {placedBets.length > 0 && (
+                  <tr>
+                    <td colSpan="4" style={{ padding: '8px', backgroundColor: '#111315' }}>
+                      <div style={{ fontSize: '11px', textAlign: 'left' }}>
+                        <strong style={{ color: '#00aaff' }}>Złożone typy i urządzenia:</strong>
+                        <ul style={{ listStyleType: 'none', paddingLeft: '5px', margin: '5px 0' }}>
+                          {placedBets.map((b, i) => {
+                            const meta = b.metadata;
+                            const formattedTime = meta?.timestamp
+                              ? new Date(meta.timestamp).toLocaleString('pl-PL')
+                              : 'Brak czasu';
+                            
+                            const timeZone = meta?.timeZone || 'Nieznana';
+                            const deviceHash = meta?.deviceFingerprint || 'Brak HASH';
+                            const deviceType = meta?.deviceType || 'Nieznany';
+                            const appMode = meta?.appMode || 'Przeglądarka';
+                            const resolution = meta?.screenResolution || '';
+
+                            return (
+                              <li key={i} style={{ marginBottom: '6px', color: '#ccc', borderBottom: '1px solid #222', paddingBottom: '4px' }}>
+                                <strong style={{ color: '#fff', fontSize: '12px' }}>{b.user}</strong>: <span style={{ color: '#ffc107', fontWeight: 'bold' }}>{b.prediction}</span> |{' '}
+                                <span style={{ color: '#aaa' }}>
+                                  🕒 {formattedTime} ({timeZone}) |{' '}
+                                  📱 <span style={{ color: '#28a745', fontWeight: 'bold' }}>{deviceType}</span> {resolution && `(${resolution})`} |{' '}
+                                  🚀 {appMode} |{' '}
+                                  🔑 ID: <span style={{ color: '#17a2b8' }}>{deviceHash}</span>
+                                </span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+
+                {/* Non-bettors Status */}
+                {nonBettors[game.id]?.length === Object.keys(submittedData).length ? (
+                  <tr>
+                    <td colSpan="4" style={{ color: 'green', fontSize: '11px', padding: '4px' }}>
+                      <strong>Nikt jeszcze nie obstawił</strong>
+                    </td>
+                  </tr>
+                ) : nonBettors[game.id]?.length > 0 ? (
+                  <tr>
+                    <td colSpan="4" style={{ color: 'red', fontSize: '11px', padding: '4px' }}>
+                      <strong>Nie obstawili: {nonBettors[game.id].join(', ')}</strong>
+                    </td>
+                  </tr>
+                ) : null}
+              </React.Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+
+      <button
+        onClick={handleSubmitResults}
+        style={{
+          backgroundColor: 'green',
+          color: 'white',
+          fontWeight: 'bold',
+          padding: '10px 20px',
+          borderRadius: '4px',
+          border: 'none',
+          cursor: 'pointer',
+          marginTop: '10px',
+        }}
+      >
+        Zatwierdź wyniki
+      </button>
     </div>
   );
 };
