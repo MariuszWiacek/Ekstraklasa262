@@ -20,6 +20,13 @@ const Admin = () => {
     return team ? team.logo : '';
   };
 
+  // Funkcja pomocnicza do wyciągania tylko nazwy miasta ze strefy czasowej (np. Europe/Warsaw -> Warszawa)
+  const getCleanCity = (timeZone) => {
+    if (!timeZone) return 'Brak lokalizacji';
+    const rawCity = timeZone.includes('/') ? timeZone.split('/')[1] : timeZone;
+    return rawCity.replace(/_/g, ' ');
+  };
+
   // Load games
   useEffect(() => {
     setGames(gameData);
@@ -293,7 +300,7 @@ const Admin = () => {
         }}
       >
         <h3 style={{ color: '#00aaff', marginBottom: '15px', fontSize: '16px' }}>
-          📊 Podgląd typów i urządzeń dla bieżącej kolejki
+          📊 Podgląd typów, lokalizacji i urządzeń dla bieżącej kolejki
         </h3>
 
         {pagedGames.map((game) => {
@@ -333,6 +340,7 @@ const Admin = () => {
                     ? new Date(meta.timestamp).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })
                     : 'Brak godz.';
 
+                  const city = getCleanCity(meta?.timeZone);
                   const deviceType = meta?.deviceType || 'Urządzenie';
                   const isPWA = meta?.appMode === 'Aplikacja PWA';
                   const deviceHash = meta?.deviceFingerprint;
@@ -358,7 +366,7 @@ const Admin = () => {
                       <strong style={{ color: '#fff' }}>{b.user}</strong> obstawił:{' '}
                       <span style={{ color: '#ffc107', fontWeight: 'bold' }}>{b.prediction}</span> |{' '}
                       <span style={{ color: '#aaa' }}>
-                        🕒 godz. {formattedTime} | 📱 {deviceType} {isPWA ? '(Aplikacja)' : '(Przeglądarka)'}
+                        🕒 godz. {formattedTime} | 📍 {city} | 📱 {deviceType} {isPWA ? '(Aplikacja)' : '(Przeglądarka)'}
                       </span>
                       {duplicateUser && (
                         <span
