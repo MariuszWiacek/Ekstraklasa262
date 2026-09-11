@@ -20,11 +20,28 @@ const Admin = () => {
     return team ? team.logo : '';
   };
 
-  // Wyciąganie nazwy miasta ze strefy czasowej
-  const getCleanCity = (timeZone) => {
-    if (!timeZone) return 'Brak lokalizacji';
-    const rawCity = timeZone.includes('/') ? timeZone.split('/')[1] : timeZone;
-    return rawCity.replace(/_/g, ' ');
+  // Map IANA timezones to flag emojis
+  const getCountryFlag = (timeZone) => {
+    if (!timeZone) return '❓';
+    
+    // Map common region prefixes or specific timezones to country codes
+    const tzLower = timeZone.toLowerCase();
+    
+    if (tzLower.includes('warsaw') || tzLower.includes('poland')) return '🇵🇱';
+    if (tzLower.includes('london')) return '🇬🇧';
+    if (tzLower.includes('berlin')) return '🇩🇪';
+    if (tzLower.includes('paris')) return '🇫🇷';
+    if (tzLower.includes('rome')) return '🇮🇹';
+    if (tzLower.includes('madrid')) return '🇪🇸';
+    if (tzLower.includes('new_york') || tzLower.includes('chicago') || tzLower.includes('los_angeles')) return '🇺🇸';
+    if (tzLower.includes('toronto') || tzLower.includes('vancouver')) return '🇨🇦';
+    if (tzLower.includes('sydney') || tzLower.includes('melbourne')) return '🇦🇺';
+    if (tzLower.includes('tokyo')) return '🇯🇵';
+    
+    // Default fallback flag for European region if unmapped
+    if (tzLower.startsWith('europe/')) return '🇪🇺';
+    
+    return '🌐';
   };
 
   // Load games
@@ -238,7 +255,6 @@ const Admin = () => {
         const currentFP = bet.metadata.deviceFingerprint;
         const currentType = bet.metadata.deviceType;
 
-        // Jeśli użytkownik ma już jakąś historię i nagle użyje nowego urządzenia
         if (
           allUserFingerprints.size > 1 &&
           currentFP &&
@@ -255,9 +271,9 @@ const Admin = () => {
       // Wykrywanie zmiany strefy czasowej
       const timeZones = new Set(userBetsInKolejka.map((b) => b.metadata.timeZone).filter(Boolean));
       if (timeZones.size > 1) {
-        const cities = Array.from(timeZones).map(getCleanCity).join(', ');
+        const flags = Array.from(timeZones).map(getCountryFlag).join(' ');
         currentWarnings.push(
-          `Gracz **${user}** zmienił strefę czasową / VPN w trakcie obstawiania kolejki (wykryte lokalizacje: ${cities}).`
+          `Gracz **${user}** zmienił strefę czasową / VPN w trakcie obstawiania kolejki (wykryte kraje: ${flags}).`
         );
       }
 
@@ -468,7 +484,7 @@ const Admin = () => {
                     ? new Date(meta.timestamp).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })
                     : 'Brak godz.';
 
-                  const city = getCleanCity(meta?.timeZone);
+                  const flag = getCountryFlag(meta?.timeZone);
                   const deviceType = meta?.deviceType || 'Urządzenie';
                   const isPWA = meta?.appMode === 'Aplikacja PWA';
 
@@ -485,7 +501,7 @@ const Admin = () => {
                       <strong style={{ color: '#fff' }}>{b.user}</strong> obstawił:{' '}
                       <span style={{ color: '#ffc107', fontWeight: 'bold' }}>{b.prediction}</span> |{' '}
                       <span style={{ color: '#aaa' }}>
-                        🕒 godz. {formattedTime} | 📍 {city} | 📱 {deviceType} {isPWA ? '(Aplikacja)' : '(Przeglądarka)'}
+                        🕒 godz. {formattedTime} | {flag} | 📱 {deviceType} {isPWA ? '(Aplikacja)' : '(Przeglądarka)'}
                       </span>
                     </li>
                   );
