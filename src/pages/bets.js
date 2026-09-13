@@ -95,11 +95,21 @@ const Bets = () => {
       if (data) setResults(data);
     });
 
+    // --- LOGIKA WYZNACZANIA KOLEJKI NA PODSTAWIE DATY ---
     const now = new Date();
-    const nextGameIndex = gameData.findIndex(
-      (game) => new Date(`${game.date}T${game.kickoff}:00+02:00`) > now
-    );
-    setCurrentKolejkaIndex(nextGameIndex !== -1 ? Math.floor(nextGameIndex / 9) : 0);
+    const nextGameIndex = gameData.findIndex((game) => {
+      if (!game.date || !game.kickoff) return false;
+      const gameTime = new Date(`${game.date}T${game.kickoff}:00+02:00`);
+      return !isNaN(gameTime) && gameTime > now;
+    });
+
+    if (nextGameIndex !== -1) {
+      setCurrentKolejkaIndex(Math.floor(nextGameIndex / 9));
+    } else {
+      // Jeśli wszystkie mecze już się odbyły, ustaw ostatnią kolejkę
+      const totalKolejki = Math.ceil(gameData.length / 9);
+      setCurrentKolejkaIndex(totalKolejki > 0 ? totalKolejki - 1 : 0);
+    }
 
     return () => {
       unsubscribeAuth();
@@ -144,7 +154,6 @@ const Bets = () => {
     setKolejki(updated);
   };
 
-  // Generowanie unikalnego kodu urządzenia (Fingerprint)
   const generateDeviceHash = () => {
     const str = `${navigator.userAgent}_${window.screen.width}x${window.screen.height}_${navigator.language}_${navigator.hardwareConcurrency}`;
     let hash = 0;
@@ -156,11 +165,8 @@ const Bets = () => {
     return 'DEV-' + Math.abs(hash).toString(16).toUpperCase();
   };
 
-  // Metadane pobierane natychmiast z poziomu przeglądarki
   const getExtendedMetadata = () => {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Warsaw';
-    
-    // Detekcja platformy/urządzenia
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const platform = isMobile ? (navigator.userAgent.includes('iPhone') ? 'iOS' : 'Android') : 'Komputer';
 
