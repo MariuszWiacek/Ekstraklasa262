@@ -13,6 +13,7 @@ const CountdownTimer = () => {
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [nextGames, setNextGames] = useState([]); // For multiple games starting at same time
   const [nonBettors, setNonBettors] = useState([]); // Lista osób, które nie obstawiły najbliższego meczu
+  const [totalUsersCount, setTotalUsersCount] = useState(0); // Łączna liczba graczy w bazie
 
   useEffect(() => {
     const updateTimeRemaining = () => {
@@ -58,6 +59,7 @@ const CountdownTimer = () => {
   useEffect(() => {
     if (nextGames.length === 0) {
       setNonBettors([]);
+      setTotalUsersCount(0);
       return;
     }
 
@@ -69,12 +71,14 @@ const CountdownTimer = () => {
       const data = snapshot.val();
       if (!data) {
         setNonBettors([]);
+        setTotalUsersCount(0);
         return;
       }
 
       const allUsers = Object.keys(data);
-      const missingUsers = allUsers.filter((user) => !data[user]?.[targetGameId]);
+      setTotalUsersCount(allUsers.length);
 
+      const missingUsers = allUsers.filter((user) => !data[user]?.[targetGameId]);
       setNonBettors(missingUsers);
     });
 
@@ -140,9 +144,24 @@ const CountdownTimer = () => {
           </div>
 
           {/* Sekcja nieobstawiających pod timerem */}
-          {nextGames.length > 0 && nonBettors.length > 0 && (
-            <div style={{ marginTop: '16px', fontSize: '11px', color: '#ff6b6b' }}>
-              Nie obstawili: <strong>{nonBettors.join(', ')}</strong>
+          {nextGames.length > 0 && (
+            <div style={{ marginTop: '16px', fontSize: '11px' }}>
+              {totalUsersCount > 0 && nonBettors.length === totalUsersCount ? (
+                // Przypadek 1: Nikt jeszcze nie obstawił
+                <span style={{ color: '#aaa', fontStyle: 'italic' }}>
+                  Nikt jeszcze nie obstawił
+                </span>
+              ) : nonBettors.length > 0 ? (
+                // Przypadek 2: Część osób nie obstawiła
+                <span style={{ color: '#ff6b6b' }}>
+                  Nie obstawili: <strong>{nonBettors.join(', ')}</strong>
+                </span>
+              ) : (
+                // Przypadek 3: Wszyscy obstawili
+                <span style={{ color: '#28a745', fontWeight: 'bold' }}>
+                  ✓ Wszyscy gracze obstawili ten mecz!
+                </span>
+              )}
             </div>
           )}
         </div>
