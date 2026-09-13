@@ -314,8 +314,8 @@
     "kolejkaId": 4,
     "home": "Jagiellonia",
     "away": "Pogoń",
-    "kickoff": null,
-    "date": "2026-00-00 - mecz przełożony",
+    "kickoff": "18:00",
+    "date": "2026-12-16",
     "disabled": false
   },
   {
@@ -323,8 +323,8 @@
     "kolejkaId": 4,
     "home": "Wisła P.",
     "away": "Lech",
-    "kickoff": null,
-    "date": "2026-00-00 - mecz przełożony",
+    "kickoff": "18:00",
+    "date": "2026-12-16",
     "disabled": false
   },
   {
