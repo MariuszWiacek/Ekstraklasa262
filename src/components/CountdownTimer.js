@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import gameData from '../gameData/data.json';
 import teamsData from '../gameData/teams.json';
 import { DateTime } from 'luxon';
+import { getDatabase, ref, onValue } from 'firebase/database';
 
 const getTeamLogo = (teamName) => {
   const team = teamsData[teamName];
@@ -11,6 +12,7 @@ const getTeamLogo = (teamName) => {
 const CountdownTimer = () => {
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [nextGames, setNextGames] = useState([]); // For multiple games starting at same time
+  const [nonBettors, setNonBettors] = useState([]); // Lista osób, które nie obstawiły najbliższego meczu
 
   useEffect(() => {
     const updateTimeRemaining = () => {
@@ -52,10 +54,35 @@ const CountdownTimer = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Pobieranie nieobstawiających z Firebase dla najbliższego meczu
+  useEffect(() => {
+    if (nextGames.length === 0) {
+      setNonBettors([]);
+      return;
+    }
+
+    const targetGameId = nextGames[0].id;
+    const db = getDatabase();
+    const submittedDataRef = ref(db, 'submittedData');
+
+    const unsubscribe = onValue(submittedDataRef, (snapshot) => {
+      const data = snapshot.val();
+      if (!data) {
+        setNonBettors([]);
+        return;
+      }
+
+      const allUsers = Object.keys(data);
+      const missingUsers = allUsers.filter((user) => !data[user]?.[targetGameId]);
+
+      setNonBettors(missingUsers);
+    });
+
+    return () => unsubscribe();
+  }, [nextGames]);
 
   // Check if this is the last round (kolejka 16)
   const isLastRound = nextGames.length > 0 && nextGames[0].round === 16;
-
 
   // Check if all 9 matches are at the same time (meaning all are starting simultaneously)
   const all9MatchesSimultaneous = isLastRound && nextGames.length === 9;
@@ -79,8 +106,7 @@ const CountdownTimer = () => {
         <div style={{ backgroundColor: '#212529ab', color: 'aliceblue', padding: '24px' }}>
           <p style={{ color: "gold", fontSize: '14px', marginBottom: '10px' }}>Następny mecz:</p>
 
-         {nextGames.length > 0 && nextGames.length < 9 ? (
- 
+          {nextGames.length > 0 && nextGames.length < 9 ? (
             // Show logos for single next game
             <div style={{ marginTop: '10px', marginBottom: '10px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px' }}>
               <div style={{ textAlign: 'center' }}>
@@ -96,7 +122,7 @@ const CountdownTimer = () => {
           ) : (
             // If multiple games but not 9 simultaneous, just show count of next games
             <p style={{ fontSize: '32px', fontWeight: 'bold', color: '#00FFAA', fontFamily:"Rubik" }}>
-              Wielki finał -  Powodzenia !
+              Wielki finał - Powodzenia !
             </p>
           )}
 
@@ -112,15 +138,17 @@ const CountdownTimer = () => {
               );
             })}
           </div>
+
+          {/* Sekcja nieobstawiających pod timerem */}
+          {nextGames.length > 0 && nonBettors.length > 0 && (
+            <div style={{ marginTop: '16px', fontSize: '11px', color: '#ff6b6b' }}>
+              Nie obstawili: <strong>{nonBettors.join(', ')}</strong>
+            </div>
+          )}
         </div>
       )}
 
-      
-      <div style={{ marginTop: '12px', fontSize: '14px', lineHeight: '1.6', color: '#fff' }}>
-      
-
-        
-      </div>
+      <div style={{ marginTop: '12px', fontSize: '14px', lineHeight: '1.6', color: '#fff' }}></div>
     </div>
   );
 };
