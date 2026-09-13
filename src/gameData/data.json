@@ -121,8 +121,8 @@
     "kolejkaId": 2,
     "home": "Korona",
     "away": "Górnik",
-    "kickoff": "20:15",
-    "date": "2026-00-00 - mecz przełożony",
+    "kickoff": "20:30",
+    "date": "2026-09-15",
     "disabled": false
   },
   {
@@ -239,8 +239,8 @@
     "kolejkaId": 3,
     "home": "Raków",
     "away": "Zagłębie",
-    "kickoff": null,
-    "date": "2026-00-00 - mecz przełożony",
+    "kickoff": "19:00",
+    "date": "2026-09-15",
     "disabled": false
   },
 
