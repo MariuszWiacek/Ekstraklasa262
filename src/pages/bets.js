@@ -95,18 +95,25 @@ const Bets = () => {
       if (data) setResults(data);
     });
 
-    // --- SAFELY FIND NEXT GAME OR FALLBACK TO LAST KOLEJKA ---
-    const now = new Date();
-    const nextGameIndex = gameData.findIndex((game) => {
-      if (!game.date || !game.kickoff) return false;
-      const gameTime = new Date(`${game.date}T${game.kickoff}:00+02:00`);
-      return !isNaN(gameTime) && gameTime > now;
+    // --- FIND THE EARLIEST UPCOMING GAME ACROSS ALL KOLEJKI ---
+    const now = new Date().getTime();
+    let nearestGameIndex = -1;
+    let nearestGameTime = Infinity;
+
+    gameData.forEach((game, index) => {
+      if (!game.date || !game.kickoff) return;
+      const gameTime = new Date(`${game.date}T${game.kickoff}:00+02:00`).getTime();
+
+      if (!isNaN(gameTime) && gameTime > now && gameTime < nearestGameTime) {
+        nearestGameTime = gameTime;
+        nearestGameIndex = index;
+      }
     });
 
-    if (nextGameIndex !== -1) {
-      setCurrentKolejkaIndex(Math.floor(nextGameIndex / 9));
+    if (nearestGameIndex !== -1) {
+      setCurrentKolejkaIndex(Math.floor(nearestGameIndex / 9));
     } else {
-      // If all games are finished, default to the last valid matchday index
+      // If all games are completed, fall back to the last matchday
       const totalKolejki = kolejki.length || Math.ceil(gameData.length / 9);
       setCurrentKolejkaIndex(totalKolejki > 0 ? totalKolejki - 1 : 0);
     }
@@ -289,7 +296,6 @@ const Bets = () => {
     objectFit: 'contain'
   };
 
-  // Safe fallback to prevent runtime crashes if kolejki is empty or out of bounds
   const currentKolejkaGames = kolejki[currentKolejkaIndex]?.games || [];
 
   return (
