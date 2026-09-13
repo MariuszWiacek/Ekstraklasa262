@@ -95,7 +95,7 @@ const Bets = () => {
       if (data) setResults(data);
     });
 
-    // --- LOGIKA WYZNACZANIA KOLEJKI NA PODSTAWIE DATY ---
+    // --- SAFELY FIND NEXT GAME OR FALLBACK TO LAST KOLEJKA ---
     const now = new Date();
     const nextGameIndex = gameData.findIndex((game) => {
       if (!game.date || !game.kickoff) return false;
@@ -106,8 +106,8 @@ const Bets = () => {
     if (nextGameIndex !== -1) {
       setCurrentKolejkaIndex(Math.floor(nextGameIndex / 9));
     } else {
-      // Jeśli wszystkie mecze już się odbyły, ustaw ostatnią kolejkę
-      const totalKolejki = Math.ceil(gameData.length / 9);
+      // If all games are finished, default to the last valid matchday index
+      const totalKolejki = kolejki.length || Math.ceil(gameData.length / 9);
       setCurrentKolejkaIndex(totalKolejki > 0 ? totalKolejki - 1 : 0);
     }
 
@@ -116,7 +116,7 @@ const Bets = () => {
       unsubscribeSubmitted();
       unsubscribeResults();
     };
-  }, []);
+  }, [kolejki.length]);
 
   const isReadOnly = (user, gameId) => Boolean(submittedData[user] && submittedData[user][gameId]);
 
@@ -289,6 +289,9 @@ const Bets = () => {
     objectFit: 'contain'
   };
 
+  // Safe fallback to prevent runtime crashes if kolejki is empty or out of bounds
+  const currentKolejkaGames = kolejki[currentKolejkaIndex]?.games || [];
+
   return (
     <div className="fade-in" style={{ textAlign: 'center', color: 'yellow' }}>
       {/* Modal powiadomień */}
@@ -403,7 +406,7 @@ const Bets = () => {
             </tr>
           </thead>
           <tbody>
-            {kolejki[currentKolejkaIndex]?.games.map((game) => (
+            {currentKolejkaGames.map((game) => (
               <React.Fragment key={game.id}>
                 <tr style={{ opacity: game.disabled ? '0.5' : '1', backgroundColor: gameStarted(game.date, game.kickoff) ? '#214029ab' : 'transparent' }}>
                   <td colSpan="12" className="date" style={{ textAlign: 'left', color: 'gold', fontSize: '10px', paddingLeft: '10%' }}>
