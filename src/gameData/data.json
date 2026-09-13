@@ -203,8 +203,8 @@
     "kolejkaId": 3,
     "home": "GKS",
     "away": "Wieczysta",
-    "kickoff": null,
-      "date": "2026-00-00 - mecz przełożony",
+    "kickoff": "20:30",
+      "date": "2026-10-12",
     "disabled": false
   },
   {
