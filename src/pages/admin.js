@@ -4,6 +4,11 @@ import gameData from '../gameData/data.json';
 import teamsData from '../gameData/teams.json';
 import Pagination from '../components/Pagination';
 
+// Helper to reliably construct Date objects from game date and kickoff time
+const parseGameDate = (game) => {
+  return new Date(`${game.date}T${game.kickoff}:00+02:00`);
+};
+
 const Admin = () => {
   const [games, setGames] = useState([]);
   const [resultsInput, setResultsInput] = useState({});
@@ -122,22 +127,28 @@ const Admin = () => {
 
   const totalPages = Math.ceil(games.length / gamesPerPage);
 
-  // Select current kolejka automatically
+  // Automatically jump to the page/kolejka containing the next upcoming game by date
   useEffect(() => {
-    if (games.length > 0) {
-      const now = new Date();
-      const nextGameIndex = gameData.findIndex((game) => {
-        const gameDate = new Date(`${game.date}T${game.kickoff}:00+02:00`);
-        return gameDate > now;
-      });
+    if (games.length === 0) return;
 
-      if (nextGameIndex !== -1) {
-        const kolejkaIndex = Math.floor(nextGameIndex / gamesPerPage);
-        setCurrentKolejkaIndex(kolejkaIndex);
-      } else {
-        const lastPage = Math.floor((games.length - 1) / gamesPerPage);
-        setCurrentKolejkaIndex(lastPage);
-      }
+    const now = new Date();
+
+    // Find the next upcoming game chronologically
+    const upcomingGame = games
+      .map((game, index) => ({
+        index,
+        date: parseGameDate(game),
+      }))
+      .filter((g) => g.date > now)
+      .sort((a, b) => a.date - b.date)[0];
+
+    if (upcomingGame) {
+      const kolejkaIndex = Math.floor(upcomingGame.index / gamesPerPage);
+      setCurrentKolejkaIndex(kolejkaIndex);
+    } else {
+      // If all games are in the past, default to the last page
+      const lastPage = Math.floor((games.length - 1) / gamesPerPage);
+      setCurrentKolejkaIndex(lastPage);
     }
   }, [games]);
 
