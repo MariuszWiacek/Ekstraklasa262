@@ -114,7 +114,6 @@ const Table = () => {
   const [prizes, setPrizes] = useState({});
   const [userEarnings, setUserEarnings] = useState({});
   const previousTableData = useRef([]);
-  const rolloverPrize = useRef(0); // Use ref to track the rollover prize across renders
 
   useEffect(() => {
     const resultsRef = ref(database, 'results');
@@ -181,7 +180,13 @@ const Table = () => {
     const prizePool = {};
     let earnings = {};
 
-    Object.keys(kolejkaPoints).forEach((kolejkaID) => {
+    // Use a local variable for rollover prize tracking per execution
+    let currentRollover = 0;
+
+    // Ensure kolejka IDs are processed in numerical order (1, 2, 3...)
+    const sortedKolejkaIDs = Object.keys(kolejkaPoints).sort((a, b) => Number(a) - Number(b));
+
+    sortedKolejkaIDs.forEach((kolejkaID) => {
       const sortedKolejka = Object.values(kolejkaPoints[kolejkaID]).sort(compareEntries);
 
       // Assign place
@@ -192,14 +197,14 @@ const Table = () => {
       const winners = sortedKolejka.filter((entry) => entry.place === topPlace).map((entry) => entry.user);
 
       // Handle prize allocation for remis (tie)
-      const currentPrize = 15 + rolloverPrize.current; // Use the rollover value for prize calculation
+      const currentPrize = 15 + currentRollover;
 
       if (winners.length === 1) {
         prizePool[kolejkaID] = { winners, prize: currentPrize };
-        rolloverPrize.current = 0; // Reset rollover for next round
+        currentRollover = 0; // Reset rollover for next round
       } else {
         prizePool[kolejkaID] = { winners, prize: 0, rollover: true }; // No prize for remis
-        rolloverPrize.current += 15; // Increase the rollover prize by 15 zł for next round
+        currentRollover += 15; // Increase the rollover prize by 15 zł for next round
       }
 
       // Update earnings for winners (no earnings for remis)
@@ -271,7 +276,7 @@ const Table = () => {
                 <div style={prizeInfoStyle}>
                   <h3><b>Kolejka {kolejkaID}</b><br /></h3>
                   {allZeroPoints ? (
-                    <p>Nikt jeszcze nie zdobył punktów.</p> // Message for no points
+                    <p>Nikt jeszcze nie zdobył punktów.</p>
                   ) : (
                     <p>
                       {prizes[kolejkaID]?.winners.length === 1 ? (
@@ -299,7 +304,7 @@ const Table = () => {
                 </div>
                 <hr />
                 
-                {visibleKolejka === kolejkaID && !allZeroPoints && ( // Only show table if not all users have 0 points
+                {visibleKolejka === kolejkaID && !allZeroPoints && (
                   <div className="fade-in" style={{ overflowX: 'auto', marginTop: '10px' }}>
                     <table style={{ borderCollapse: 'collapse', width: '100%' }}>
                       <thead>
@@ -359,8 +364,8 @@ const Table = () => {
             <div style={{ marginTop: '10px', color: '#FFD700' }}>
               <b>Bonusy kolejkowe :<hr></hr></b>
               {Object.entries(userEarnings)
-                .filter(([, earningsAmount]) => earningsAmount > 0) // Filter out users with 0 earnings
-                .sort(([, earningsA], [, earningsB]) => earningsB - earningsA) // Sort by earnings in descending order
+                .filter(([, earningsAmount]) => earningsAmount > 0)
+                .sort(([, earningsA], [, earningsB]) => earningsB - earningsA)
                 .map(([user, earningsAmount]) => (
                   <p key={user}>
                     {user}: {earningsAmount} 🥮
