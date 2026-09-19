@@ -97,12 +97,39 @@ const assignPlaces = (data) => {
         entry.correctResults === prev.correctResults &&
         entry.correctTypes === prev.correctTypes
       ) {
-        entry.place = prev.place; // Ten sam wynik = to samo miejsce
+        entry.place = prev.place;
       } else {
         entry.place = index + 1;
       }
     }
   });
+};
+
+// Generates dynamic feedback prioritizing table placement & accuracy over missed bets
+const generateUserComment = (entry, totalPlayedGames, totalUsers) => {
+  const { place, totalBets, points, ppb, correctTypes, correctResults } = entry;
+  const missedGames = totalPlayedGames - totalBets;
+  const isTopThree = place <= 3;
+  const isHighEfficiency = ppb >= 1.5;
+
+  // 1. Prioritize high-performing users who missed bets
+  if (missedGames > 0 && (isTopThree || isHighEfficiency)) {
+    return `🎯 Sniper! Missed ${missedGames} bet(s), but still holding place #${place} with ${ppb} pts/bet!`;
+  }
+
+  // 2. High Table Positions
+  if (place === 1) return '👑 Leader of the pack! Consistent high-value picks.';
+  if (place === 2 || place === 3) return '🔥 Podium contender! Heavy pressure on 1st place.';
+
+  // 3. Middle / Good Bettors
+  if (ppb >= 1.2) return '⭐ Solid efficiency. Very reliable accuracy when picking.';
+  if (place <= Math.ceil(totalUsers / 2)) return '📊 Balanced bettor. Cruising safely in the upper half.';
+
+  // 4. Low Bettors or Cold Streaks
+  if (missedGames > 5) return '💤 Missing in action! Needs more submitted bets to push higher.';
+  if (ppb < 0.8) return '📉 Rough streak lately. Needs a reset on outcome strategies.';
+
+  return '🎲 In the mix. One good round can jump multiple places.';
 };
 
 const Table = () => {
@@ -129,6 +156,8 @@ const Table = () => {
 
   useEffect(() => {
     const kolejkaPoints = {};
+    const totalFinishedMatches = Object.keys(results).filter((id) => results[id]?.result).length;
+
     const overallTableData = Object.keys(submittedData).map((user) => {
       const bets = Object.entries(submittedData[user]).map(([id, bet]) => ({
         ...bet,
@@ -136,10 +165,13 @@ const Table = () => {
       }));
       const { points, correctTypes, correctResults } = calculatePoints(bets, results);
 
+      // Total bets submitted for finished games
+      const totalBetsSubmitted = bets.filter((b) => results[b.id]?.result).length;
+
       // Group by kolejka
       bets.forEach((bet) => {
         const gameNumber = parseInt(bet.id, 10);
-        const kolejkaID = Math.ceil(gameNumber / 9); // Determine kolejka
+        const kolejkaID = Math.ceil(gameNumber / 9);
         if (!kolejkaPoints[kolejkaID]) kolejkaPoints[kolejkaID] = {};
         if (!kolejkaPoints[kolejkaID][user]) {
           kolejkaPoints[kolejkaID][user] = { user, points: 0, correctTypes: 0, correctResults: 0 };
@@ -151,16 +183,26 @@ const Table = () => {
         kolejkaPoints[kolejkaID][user].correctResults += correctResults;
       });
 
-      return { user, points, correctTypes, correctResults };
+      // Efficiency Rating (Points per bet played)
+      const ppb = totalBetsSubmitted > 0 ? (points / totalBetsSubmitted).toFixed(2) : '0.00';
+
+      return {
+        user,
+        points,
+        correctTypes,
+        correctResults,
+        totalBets: totalBetsSubmitted,
+        ppb: parseFloat(ppb),
+      };
     });
 
-    // Sort overall table (points -> correctResults -> correctTypes)
+    // Sort overall table
     overallTableData.sort(compareEntries);
-
-    // Assign place taking ties into account
     assignPlaces(overallTableData);
 
-    // Calculate trends
+    const totalUsers = overallTableData.length;
+
+    // Calculate OVR & Assign Comments
     overallTableData.forEach((entry) => {
       const previousEntry = previousTableData.current.find((e) => e.user === entry.user);
       entry.trend = previousEntry
@@ -170,6 +212,14 @@ const Table = () => {
           ? 'down'
           : 'same'
         : 'same';
+
+      // Fair OVR Rating Calculation (Base 50 + Efficiency + Table Position)
+      const positionBonus = Math.max(0, (totalUsers - entry.place + 1) * 3);
+      const efficiencyBonus = entry.ppb * 15;
+      entry.ovr = Math.min(99, Math.round(50 + efficiencyBonus + positionBonus));
+
+      // Generate dynamic comment prioritizing performance & table rank
+      entry.comment = generateUserComment(entry, totalFinishedMatches, totalUsers);
     });
 
     previousTableData.current = overallTableData;
@@ -180,34 +230,26 @@ const Table = () => {
     const prizePool = {};
     let earnings = {};
 
-    // Use a local variable for rollover prize tracking per execution
     let currentRollover = 0;
-
-    // Ensure kolejka IDs are processed in numerical order (1, 2, 3...)
     const sortedKolejkaIDs = Object.keys(kolejkaPoints).sort((a, b) => Number(a) - Number(b));
 
     sortedKolejkaIDs.forEach((kolejkaID) => {
       const sortedKolejka = Object.values(kolejkaPoints[kolejkaID]).sort(compareEntries);
-
-      // Assign place
       assignPlaces(sortedKolejka);
 
-      // Find winners (highest overall rank in kolejka based on tiebreakers)
       const topPlace = sortedKolejka[0]?.place;
       const winners = sortedKolejka.filter((entry) => entry.place === topPlace).map((entry) => entry.user);
 
-      // Handle prize allocation for remis (tie)
       const currentPrize = 15 + currentRollover;
 
       if (winners.length === 1) {
         prizePool[kolejkaID] = { winners, prize: currentPrize };
-        currentRollover = 0; // Reset rollover for next round
+        currentRollover = 0;
       } else {
-        prizePool[kolejkaID] = { winners, prize: 0, rollover: true }; // No prize for remis
-        currentRollover += 15; // Increase the rollover prize by 15 zł for next round
+        prizePool[kolejkaID] = { winners, prize: 0, rollover: true };
+        currentRollover += 15;
       }
 
-      // Update earnings for winners (no earnings for remis)
       winners.forEach((winner) => {
         if (!earnings[winner]) earnings[winner] = 0;
         if (prizePool[kolejkaID].prize > 0) {
@@ -238,9 +280,12 @@ const Table = () => {
                 <tr style={{ backgroundColor: '#212529', color: 'white' }}>
                   <th style={tableHeaderStyle}>Miejsce</th>
                   <th style={tableHeaderStyle}>Użytkownik</th>
+                  <th style={tableHeaderStyle}>OVR</th>
                   <th style={tableHeaderStyle}>Pkt</th>
+                  <th style={tableHeaderStyle}>Pkt/Bet</th>
                   <th style={tableHeaderStyle}>☑️ <br />typ</th>
                   <th style={tableHeaderStyle}>✅☑️ <br />typ+wynik</th>
+                  <th style={tableHeaderStyle}>Komentarz</th>
                 </tr>
               </thead>
               <tbody>
@@ -252,10 +297,17 @@ const Table = () => {
                     }}
                   >
                     <td style={tableCellStyle}>{entry.place}</td>
-                    <td style={tableCellStyle}>{entry.user}</td>
+                    <td style={tableCellStyle}><b>{entry.user}</b></td>
+                    <td style={{ ...tableCellStyle, fontWeight: 'bold', color: '#ffd700' }}>
+                      {entry.ovr}
+                    </td>
                     <td style={tableCellStyle}>{entry.points}</td>
+                    <td style={tableCellStyle}>{entry.ppb}</td>
                     <td style={tableCellStyle}>{entry.correctTypes}</td>
                     <td style={tableCellStyle}>{entry.correctResults}</td>
+                    <td style={{ ...tableCellStyle, fontSize: '0.85em', textAlign: 'left' }}>
+                      {entry.comment}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -266,13 +318,11 @@ const Table = () => {
           
           {Object.keys(kolejkaTables).map((kolejkaID) => {
             const kolejkaData = kolejkaTables[kolejkaID];
-
-            // Check if all users have 0 points for this kolejka
             const allZeroPoints = kolejkaData.every((entry) => entry.points === 0);
 
             return (
               <div key={kolejkaID}>
-                <hr style={{color: 'white'}} />
+                <hr style={{ color: 'white' }} />
                 <div style={prizeInfoStyle}>
                   <h3><b>Kolejka {kolejkaID}</b><br /></h3>
                   {allZeroPoints ? (
@@ -340,7 +390,7 @@ const Table = () => {
           })}
 
           <div style={earningsStyle}><hr></hr>
-            <p style={{fontSize: '15px', }}>
+            <p style={{ fontSize: '15px' }}>
               22x60=1320 🥮
               18 kolejek x 15 🥮 = 270 🥮
               1320 - 270 = 1050 🥮 w puli
@@ -374,7 +424,7 @@ const Table = () => {
             </div>
           </div>
         </Col>
-      </Row><hr style={{color: 'white'}}></hr>
+      </Row><hr style={{ color: 'white' }}></hr>
       <Stats />
     </Container>
   );
