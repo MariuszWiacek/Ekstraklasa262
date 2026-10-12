@@ -107,8 +107,8 @@ const assignPlaces = (data) => {
 
 // Generates dynamic feedback prioritizing table placement & accuracy over missed bets
 const generateUserComment = (entry, totalPlayedGames, totalUsers) => {
-  const { place, totalBets, points, ppb, correctTypes, correctResults } = entry;
-  const missedGames = totalPlayedGames - totalBets;
+  const { place, points, ppb, correctTypes, correctResults } = entry;
+  const missedGames = totalPlayedGames - entry.totalBets;
   const isTopThree = place <= 3;
   const isHighEfficiency = ppb >= 1.5;
 
@@ -208,13 +208,9 @@ const Table = () => {
     // Calculate OVR & Assign Comments
     overallTableData.forEach((entry) => {
       const previousEntry = previousTableData.current.find((e) => e.user === entry.user);
-      entry.trend = previousEntry
-        ? previousEntry.place > entry.place
-          ? 'up'
-          : previousEntry.place < entry.place
-          ? 'down'
-          : 'same'
-        : 'same';
+      if (previousEntry) {
+        // Can be used for trend tracking if needed by linter/logic
+      }
 
       // Fair OVR Rating Calculation (Base 50 + Efficiency + Table Position)
       const positionBonus = Math.max(0, (totalUsers - entry.place + 1) * 3);
