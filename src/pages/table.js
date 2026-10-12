@@ -163,7 +163,10 @@ const Table = () => {
         ...bet,
         id,
       }));
-      const { points, correctTypes, correctResults } = calculatePoints(bets, results);
+      const userTotal = calculatePoints(bets, results);
+      const points = userTotal.points;
+      const correctTypes = userTotal.correctTypes;
+      const correctResults = userTotal.correctResults;
 
       // Total bets submitted for finished games
       const totalBetsSubmitted = bets.filter((b) => results[b.id]?.result).length;
@@ -177,10 +180,10 @@ const Table = () => {
           kolejkaPoints[kolejkaID][user] = { user, points: 0, correctTypes: 0, correctResults: 0 };
         }
 
-        const { points, correctTypes, correctResults } = calculatePoints([bet], results);
-        kolejkaPoints[kolejkaID][user].points += points;
-        kolejkaPoints[kolejkaID][user].correctTypes += correctTypes;
-        kolejkaPoints[kolejkaID][user].correctResults += correctResults;
+        const betResult = calculatePoints([bet], results);
+        kolejkaPoints[kolejkaID][user].points += betResult.points;
+        kolejkaPoints[kolejkaID][user].correctTypes += betResult.correctTypes;
+        kolejkaPoints[kolejkaID][user].correctResults += betResult.correctResults;
       });
 
       // Efficiency Rating (Points per bet played)
