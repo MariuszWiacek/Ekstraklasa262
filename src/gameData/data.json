@@ -815,5 +815,332 @@
     "date": "2026-10-12",
     "disabled": false
   }
+,
+
+  {
+    "id": 91,
+    "kolejkaId": 11,
+    "home": "Wieczysta",
+    "away": "Raków",
+    "kickoff": "18:00",
+    "date": "2026-10-16",
+    "disabled": false
+  },
+  {
+    "id": 92,
+    "kolejkaId": 11,
+    "home": "Widzew",
+    "away": "Wisła",
+    "kickoff": "20:30",
+    "date": "2026-10-16",
+    "disabled": false
+  },
+  {
+    "id": 93,
+    "kolejkaId": 11,
+    "home": "Motor",
+    "away": "Śląsk",
+    "kickoff": "14:45",
+    "date": "2026-10-17",
+    "disabled": false
+  },
+  {
+    "id": 94,
+    "kolejkaId": 11,
+    "home": "GKS",
+    "away": "Pogoń",
+    "kickoff": "17:30",
+    "date": "2026-10-17",
+    "disabled": false
+  },
+  {
+    "id": 95,
+    "kolejkaId": 11,
+    "home": "Cracovia",
+    "away": "Legia",
+    "kickoff": "20:30",
+    "date": "2026-10-17",
+    "disabled": false
+  },
+  {
+    "id": 96,
+    "kolejkaId": 11,
+    "home": "Górnik",
+    "away": "Piast",
+    "kickoff": "12:15",
+    "date": "2026-10-18",
+    "disabled": false
+  },
+  {
+    "id": 97,
+    "kolejkaId": 11,
+    "home": "Zagłębie",
+    "away": "Jagiellonia",
+    "kickoff": "14:45",
+    "date": "2026-10-18",
+    "disabled": false
+  },
+  {
+    "id": 98,
+    "kolejkaId": 11,
+    "home": "Lech",
+    "away": "Korona",
+    "kickoff": "17:30",
+    "date": "2026-10-18",
+    "disabled": false
+  },
+  {
+    "id": 99,
+    "kolejkaId": 11,
+    "home": "Wisła",
+    "away": "Radomiak",
+    "kickoff": "19:00",
+    "date": "2026-10-19",
+    "disabled": false
+  },
+  {
+    "id": 100,
+    "kolejkaId": 12,
+    "home": "Motor",
+    "away": "Zagłębie",
+    "kickoff": "18:00",
+    "date": "2026-10-23",
+    "disabled": false
+  },
+  {
+    "id": 101,
+    "kolejkaId": 12,
+    "home": "Widzew",
+    "away": "Górnik",
+    "kickoff": "20:30",
+    "date": "2026-10-23",
+    "disabled": false
+  },
+  {
+    "id": 102,
+    "kolejkaId": 12,
+    "home": "Piast",
+    "away": "Cracovia",
+    "kickoff": "12:15",
+    "date": "2026-10-24",
+    "disabled": false
+  },
+  {
+    "id": 103,
+    "kolejkaId": 12,
+    "home": "Korona",
+    "away": "GKS",
+    "kickoff": "14:45",
+    "date": "2026-10-24",
+    "disabled": false
+  },
+  {
+    "id": 104,
+    "kolejkaId": 12,
+    "home": "Pogoń",
+    "away": "Radomiak",
+    "kickoff": "17:30",
+    "date": "2026-10-24",
+    "disabled": false
+  },
+  {
+    "id": 105,
+    "kolejkaId": 12,
+    "home": "Wisła",
+    "away": "Raków",
+    "kickoff": "20:15",
+    "date": "2026-10-24",
+    "disabled": false
+  },
+  {
+    "id": 106,
+    "kolejkaId": 12,
+    "home": "Śląsk",
+    "away": "Wieczysta",
+    "kickoff": "12:15",
+    "date": "2026-10-25",
+    "disabled": false
+  },
+  {
+    "id": 107,
+    "kolejkaId": 12,
+    "home": "Jagiellonia",
+    "away": "Wisła",
+    "kickoff": "14:45",
+    "date": "2026-10-25",
+    "disabled": false
+  },
+  {
+    "id": 108,
+    "kolejkaId": 12,
+    "home": "Legia",
+    "away": "Lech",
+    "kickoff": "17:30",
+    "date": "2026-10-25",
+    "disabled": false
+  },
+  {
+    "id": 109,
+    "kolejkaId": 13,
+    "home": "Cracovia",
+    "away": "Motor",
+    "kickoff": "18:00",
+    "date": "2026-10-30",
+    "disabled": false
+  },
+  {
+    "id": 110,
+    "kolejkaId": 13,
+    "home": "Górnik",
+    "away": "Legia",
+    "kickoff": "20:30",
+    "date": "2026-10-30",
+    "disabled": false
+  },
+  {
+    "id": 111,
+    "kolejkaId": 13,
+    "home": "Wisła",
+    "away": "Piast",
+    "kickoff": "12:15",
+    "date": "2026-10-31",
+    "disabled": false
+  },
+  {
+    "id": 112,
+    "kolejkaId": 13,
+    "home": "Wieczysta",
+    "away": "Jagiellonia",
+    "kickoff": "14:45",
+    "date": "2026-10-31",
+    "disabled": false
+  },
+  {
+    "id": 113,
+    "kolejkaId": 13,
+    "home": "Lech",
+    "away": "Wisła",
+    "kickoff": "17:30",
+    "date": "2026-10-31",
+    "disabled": false
+  },
+  {
+    "id": 114,
+    "kolejkaId": 13,
+    "home": "GKS",
+    "away": "Widzew",
+    "kickoff": "20:15",
+    "date": "2026-10-31",
+    "disabled": false
+  },
+  {
+    "id": 115,
+    "kolejkaId": 13,
+    "home": "Radomiak",
+    "away": "Śląsk",
+    "kickoff": "18:00",
+    "date": "2026-11-02",
+    "disabled": false
+  },
+  {
+    "id": 116,
+    "kolejkaId": 13,
+    "home": "Zagłębie",
+    "away": "Korona",
+    "kickoff": "18:00",
+    "date": "2026-11-02",
+    "disabled": false
+  },
+  {
+    "id": 117,
+    "kolejkaId": 13,
+    "home": "Raków",
+    "away": "Pogoń",
+    "kickoff": "20:30",
+    "date": "2026-11-02",
+    "disabled": false
+  },
+  {
+    "id": 118,
+    "kolejkaId": 14,
+    "home": "Motor",
+    "away": "Wisła",
+    "kickoff": "18:00",
+    "date": "2026-11-06",
+    "disabled": false
+  },
+  {
+    "id": 119,
+    "kolejkaId": 14,
+    "home": "Wisła",
+    "away": "Cracovia",
+    "kickoff": "20:30",
+    "date": "2026-11-06",
+    "disabled": false
+  },
+  {
+    "id": 120,
+    "kolejkaId": 14,
+    "home": "Korona",
+    "away": "Radomiak",
+    "kickoff": "12:15",
+    "date": "2026-11-07",
+    "disabled": false
+  },
+  {
+    "id": 121,
+    "kolejkaId": 14,
+    "home": "Śląsk",
+    "away": "Piast",
+    "kickoff": "14:45",
+    "date": "2026-11-07",
+    "disabled": false
+  },
+  {
+    "id": 122,
+    "kolejkaId": 14,
+    "home": "Górnik",
+    "away": "Wieczysta",
+    "kickoff": "17:30",
+    "date": "2026-11-07",
+    "disabled": false
+  },
+  {
+    "id": 123,
+    "kolejkaId": 14,
+    "home": "Widzew",
+    "away": "Pogoń",
+    "kickoff": "20:15",
+    "date": "2026-11-07",
+    "disabled": false
+  },
+  {
+    "id": 124,
+    "kolejkaId": 14,
+    "home": "Jagiellonia",
+    "away": "GKS",
+    "kickoff": "14:45",
+    "date": "2026-11-08",
+    "disabled": false
+  },
+  {
+    "id": 125,
+    "kolejkaId": 14,
+    "home": "Legia",
+    "away": "Raków",
+    "kickoff": "17:30",
+    "date": "2026-11-08",
+    "disabled": false
+  },
+  {
+    "id": 126,
+    "kolejkaId": 14,
+    "home": "Lech",
+    "away": "Zagłębie",
+    "kickoff": "20:15",
+    "date": "2026-11-08",
+    "disabled": false
+  }
 ]
+
 
