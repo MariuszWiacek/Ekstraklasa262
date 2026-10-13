@@ -830,7 +830,7 @@
     "id": 92,
     "kolejkaId": 11,
     "home": "Widzew",
-    "away": "Wisła",
+    "away": "Wisła K.",
     "kickoff": "20:30",
     "date": "2026-10-16",
     "disabled": false
@@ -892,7 +892,7 @@
   {
     "id": 99,
     "kolejkaId": 11,
-    "home": "Wisła",
+    "home": "Wisła P.",
     "away": "Radomiak",
     "kickoff": "19:00",
     "date": "2026-10-19",
@@ -946,7 +946,7 @@
   {
     "id": 105,
     "kolejkaId": 12,
-    "home": "Wisła",
+    "home": "Wisła K.",
     "away": "Raków",
     "kickoff": "20:15",
     "date": "2026-10-24",
@@ -965,7 +965,7 @@
     "id": 107,
     "kolejkaId": 12,
     "home": "Jagiellonia",
-    "away": "Wisła",
+    "away": "Wisła P.",
     "kickoff": "14:45",
     "date": "2026-10-25",
     "disabled": false
@@ -1000,7 +1000,7 @@
   {
     "id": 111,
     "kolejkaId": 13,
-    "home": "Wisła",
+    "home": "Wisła P.",
     "away": "Piast",
     "kickoff": "12:15",
     "date": "2026-10-31",
@@ -1019,7 +1019,7 @@
     "id": 113,
     "kolejkaId": 13,
     "home": "Lech",
-    "away": "Wisła",
+    "away": "Wisła K.",
     "kickoff": "17:30",
     "date": "2026-10-31",
     "disabled": false
@@ -1064,7 +1064,7 @@
     "id": 118,
     "kolejkaId": 14,
     "home": "Motor",
-    "away": "Wisła",
+    "away": "Wisła P.",
     "kickoff": "18:00",
     "date": "2026-11-06",
     "disabled": false
@@ -1072,7 +1072,7 @@
   {
     "id": 119,
     "kolejkaId": 14,
-    "home": "Wisła",
+    "home": "Wisła K.",
     "away": "Cracovia",
     "kickoff": "20:30",
     "date": "2026-11-06",
