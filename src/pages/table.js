@@ -105,33 +105,6 @@ const assignPlaces = (data) => {
   });
 };
 
-// Generates dynamic feedback prioritizing table placement & accuracy over missed bets
-const generateUserComment = (entry, totalPlayedGames, totalUsers) => {
-  const { place, totalBets, ppb } = entry;
-  const missedGames = totalPlayedGames - totalBets;
-  const isTopThree = place <= 3;
-  const isHighEfficiency = ppb >= 1.5;
-
-  // 1. Prioritize high-performing users who missed bets
-  if (missedGames > 0 && (isTopThree || isHighEfficiency)) {
-    return `🎯 Sniper! Missed ${missedGames} bet(s), but still holding place #${place} with ${ppb} pts/bet!`;
-  }
-
-  // 2. High Table Positions
-  if (place === 1) return '👑 Leader of the pack! Consistent high-value picks.';
-  if (place === 2 || place === 3) return '🔥 Podium contender! Heavy pressure on 1st place.';
-
-  // 3. Middle / Good Bettors
-  if (ppb >= 1.2) return '⭐ Solid efficiency. Very reliable accuracy when picking.';
-  if (place <= Math.ceil(totalUsers / 2)) return '📊 Balanced bettor. Cruising safely in the upper half.';
-
-  // 4. Low Bettors or Cold Streaks
-  if (missedGames > 5) return '💤 Missing in action! Needs more submitted bets to push higher.';
-  if (ppb < 0.8) return '📉 Rough streak lately. Needs a reset on outcome strategies.';
-
-  return '🎲 In the mix. One good round can jump multiple places.';
-};
-
 const Table = () => {
   const [results, setResults] = useState({});
   const [submittedData, setSubmittedData] = useState({});
@@ -156,7 +129,6 @@ const Table = () => {
 
   useEffect(() => {
     const kolejkaPoints = {};
-    const totalFinishedMatches = Object.keys(results).filter((id) => results[id]?.result).length;
 
     const overallTableData = Object.keys(submittedData).map((user) => {
       const bets = Object.entries(submittedData[user]).map(([id, bet]) => ({
@@ -168,7 +140,6 @@ const Table = () => {
       const correctTypes = userTotal.correctTypes;
       const correctResults = userTotal.correctResults;
 
-      // Total bets submitted for finished games
       const totalBetsSubmitted = bets.filter((b) => results[b.id]?.result).length;
 
       // Group by kolejka
@@ -186,7 +157,6 @@ const Table = () => {
         kolejkaPoints[kolejkaID][user].correctResults += singleBetResult.correctResults;
       });
 
-      // Efficiency Rating (Points per bet played)
       const ppb = totalBetsSubmitted > 0 ? (points / totalBetsSubmitted).toFixed(2) : '0.00';
 
       return {
@@ -203,9 +173,6 @@ const Table = () => {
     overallTableData.sort(compareEntries);
     assignPlaces(overallTableData);
 
-    const totalUsers = overallTableData.length;
-
-    // Calculate OVR & Assign Comments
     overallTableData.forEach((entry) => {
       const previousEntry = previousTableData.current.find((e) => e.user === entry.user);
       entry.trend = previousEntry
@@ -215,14 +182,6 @@ const Table = () => {
           ? 'down'
           : 'same'
         : 'same';
-
-      // Fair OVR Rating Calculation (Base 50 + Efficiency + Table Position)
-      const positionBonus = Math.max(0, (totalUsers - entry.place + 1) * 3);
-      const efficiencyBonus = entry.ppb * 15;
-      entry.ovr = Math.min(99, Math.round(50 + efficiencyBonus + positionBonus));
-
-      // Generate dynamic comment prioritizing performance & table rank
-      entry.comment = generateUserComment(entry, totalFinishedMatches, totalUsers);
     });
 
     previousTableData.current = overallTableData;
@@ -283,12 +242,10 @@ const Table = () => {
                 <tr style={{ backgroundColor: '#212529', color: 'white' }}>
                   <th style={tableHeaderStyle}>Miejsce</th>
                   <th style={tableHeaderStyle}>Użytkownik</th>
-                  <th style={tableHeaderStyle}>OVR</th>
                   <th style={tableHeaderStyle}>Pkt</th>
                   <th style={tableHeaderStyle}>Pkt/Bet</th>
                   <th style={tableHeaderStyle}>☑️ <br />typ</th>
                   <th style={tableHeaderStyle}>✅☑️ <br />typ+wynik</th>
-                  <th style={tableHeaderStyle}>Komentarz</th>
                 </tr>
               </thead>
               <tbody>
@@ -301,16 +258,10 @@ const Table = () => {
                   >
                     <td style={tableCellStyle}>{entry.place}</td>
                     <td style={tableCellStyle}><b>{entry.user}</b></td>
-                    <td style={{ ...tableCellStyle, fontWeight: 'bold', color: '#ffd700' }}>
-                      {entry.ovr}
-                    </td>
                     <td style={tableCellStyle}>{entry.points}</td>
                     <td style={tableCellStyle}>{entry.ppb}</td>
                     <td style={tableCellStyle}>{entry.correctTypes}</td>
                     <td style={tableCellStyle}>{entry.correctResults}</td>
-                    <td style={{ ...tableCellStyle, fontSize: '0.85em', textAlign: 'left' }}>
-                      {entry.comment}
-                    </td>
                   </tr>
                 ))}
               </tbody>
