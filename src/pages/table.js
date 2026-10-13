@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { getDatabase, ref, onValue } from 'firebase/database';
 import { initializeApp } from 'firebase/app';
@@ -106,28 +105,6 @@ const assignPlaces = (data) => {
   });
 };
 
-// Generates dynamic feedback prioritizing skills, high performance & accuracy over missed bets
-const generateUserComment = (entry, totalPlayedGames, totalUsers) => {
-  const { place, totalBets, ppb } = entry;
-  const missedGames = totalPlayedGames - totalBets;
-  const isTopThree = place <= 3;
-  const isHighEfficiency = ppb >= 1.3;
-
-  // 1. High-performing / top users get praised for skills even if they miss a few bets
-  if (place === 1) return '👑 Leader of the pack! Consistent high-value picks.';
-  if (place === 2 || place === 3) return '🔥 Podium contender! Great accuracy and heavy pressure on 1st place.';
-  if (isHighEfficiency) return '⭐ High efficiency and sharp eye for outcomes!';
-
-  // 2. Middle / Good Bettors
-  if (place <= Math.ceil(totalUsers / 2)) return '📊 Balanced bettor. Cruising safely in the upper half.';
-
-  // 3. Low Bettors or Cold Streaks (only penalize comments here if overall stats are low)
-  if (missedGames > 5 && ppb < 0.9) return '💤 Missing in action and struggling for form. Needs more submitted bets.';
-  if (ppb < 0.8) return '📉 Rough streak lately. Needs a reset on outcome strategies.';
-
-  return '🎲 In the mix. One good round can jump multiple places.';
-};
-
 const Table = () => {
   const [results, setResults] = useState({});
   const [submittedData, setSubmittedData] = useState({});
@@ -152,7 +129,6 @@ const Table = () => {
 
   useEffect(() => {
     const kolejkaPoints = {};
-    const totalFinishedMatches = Object.keys(results).filter((id) => results[id]?.result).length;
 
     const overallTableData = Object.keys(submittedData).map((user) => {
       const bets = Object.entries(submittedData[user]).map(([id, bet]) => ({
@@ -197,8 +173,6 @@ const Table = () => {
     overallTableData.sort(compareEntries);
     assignPlaces(overallTableData);
 
-    const totalUsers = overallTableData.length;
-
     overallTableData.forEach((entry) => {
       const previousEntry = previousTableData.current.find((e) => e.user === entry.user);
       entry.trend = previousEntry
@@ -208,13 +182,6 @@ const Table = () => {
           ? 'down'
           : 'same'
         : 'same';
-
-      // Fair OVR Rating Calculation (Base 55 + Efficiency + Table Position, forgiving missed bets if efficiency is high)
-      const positionBonus = Math.max(0, (totalUsers - entry.place + 1) * 3);
-      const efficiencyBonus = entry.ppb * 18;
-      entry.ovr = Math.min(99, Math.round(55 + efficiencyBonus + positionBonus));
-
-      entry.comment = generateUserComment(entry, totalFinishedMatches, totalUsers);
     });
 
     previousTableData.current = overallTableData;
@@ -275,11 +242,10 @@ const Table = () => {
                 <tr style={{ backgroundColor: '#212529', color: 'white' }}>
                   <th style={tableHeaderStyle}>Miejsce</th>
                   <th style={tableHeaderStyle}>Użytkownik</th>
-                  <th style={tableHeaderStyle}>OVR</th>
                   <th style={tableHeaderStyle}>Pkt</th>
+                 
                   <th style={tableHeaderStyle}>☑️ <br />typ</th>
                   <th style={tableHeaderStyle}>✅☑️ <br />typ+wynik</th>
-                  <th style={tableHeaderStyle}>Komentarz</th>
                 </tr>
               </thead>
               <tbody>
@@ -292,15 +258,10 @@ const Table = () => {
                   >
                     <td style={tableCellStyle}>{entry.place}</td>
                     <td style={tableCellStyle}><b>{entry.user}</b></td>
-                    <td style={{ ...tableCellStyle, fontWeight: 'bold', color: '#ffd700' }}>
-                      {entry.ovr}
-                    </td>
                     <td style={tableCellStyle}>{entry.points}</td>
+                    <td style={tableCellStyle}>{entry.ppb}</td>
                     <td style={tableCellStyle}>{entry.correctTypes}</td>
                     <td style={tableCellStyle}>{entry.correctResults}</td>
-                    <td style={{ ...tableCellStyle, fontSize: '0.85em', textAlign: 'left' }}>
-                      {entry.comment}
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -424,4 +385,3 @@ const Table = () => {
 };
 
 export default Table;
-
