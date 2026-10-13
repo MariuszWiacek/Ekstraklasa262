@@ -105,321 +105,38 @@ const assignPlaces = (data) => {
   });
 };
 
+// Advanced & Fair OVR Calculation (0-99)
+const calculateOVR = (entry, totalUsers) => {
+  const { points, totalBets, correctResults, correctTypes, place } = entry;
+  if (totalBets === 0) return 50;
+
+  // 1. Efficiency Score (Points per bet, scale 0-35)
+  const ppb = points / totalBets;
+  const efficiencyScore = Math.min(35, ppb * 22);
+
+  // 2. Precision Ratio (Exact results relative to total hits, scale 0-25)
+  const precisionRatio = correctTypes > 0 ? correctResults / correctTypes : 0;
+  const precisionScore = Math.min(25, precisionRatio * 40);
+
+  // 3. Table Position Bonus (Scale 0-35)
+  const positionBonus = totalUsers > 0 ? Math.max(0, ((totalUsers - place + 1) / totalUsers) * 35) : 0;
+
+  // Base OVR 50 + sub-scores (Max 99)
+  const calculatedOVR = Math.round(50 + (efficiencyScore + precisionScore + positionBonus) / 2.2);
+  return Math.min(99, Math.max(50, calculatedOVR));
+};
+
 // Generates dynamic feedback prioritizing skills, high performance & accuracy over missed bets
 const generateUserComment = (entry, totalPlayedGames, totalUsers) => {
-  const { place, totalBets, ppb } = entry;
+  const { place, totalBets, ppb, correctResults, correctTypes } = entry;
   const missedGames = totalPlayedGames - totalBets;
   const isTopThree = place <= 3;
-  const isHighEfficiency = ppb >= 1.3;
+  const exactResultRatio = correctTypes > 0 ? correctResults / correctTypes : 0;
 
-  // 1. High-performing / top users get praised for skills even if they miss a few bets
-  if (place === 1) return '👑 Leader of the pack! Consistent high-value picks.';
-  if (place === 2 || place === 3) return '🔥 Podium contender! Great accuracy and heavy pressure on 1st place.';
-  if (isHighEfficiency) return '⭐ High efficiency and sharp eye for outcomes!';
+  // 1. High-performing / Top Users - Praise strengths regardless of missed bets
+  if (place === 1) return '👑 Lider tabeli! Niesamowita regularność i wysoka chłodna precyzja.';
+  if (isTopThree) return '🔥 Walczy o podium! Ogromna presja na liderze i wysoka skuteczność.';
 
-  // 2. Middle / Good Bettors
-  if (place <= Math.ceil(totalUsers / 2)) return '📊 Balanced bettor. Cruising safely in the upper half.';
-
-  // 3. Low Bettors or Cold Streaks (only penalize comments here if overall stats are low)
-  if (missedGames > 5 && ppb < 0.9) return '💤 Missing in action and struggling for form. Needs more submitted bets.';
-  if (ppb < 0.8) return '📉 Rough streak lately. Needs a reset on outcome strategies.';
-
-  return '🎲 In the mix. One good round can jump multiple places.';
-};
-
-const Table = () => {
-  const [results, setResults] = useState({});
-  const [submittedData, setSubmittedData] = useState({});
-  const [mainTableData, setMainTableData] = useState([]);
-  const [kolejkaTables, setKolejkaTables] = useState({});
-  const [visibleKolejka, setVisibleKolejka] = useState(null);
-  const [prizes, setPrizes] = useState({});
-  const [userEarnings, setUserEarnings] = useState({});
-  const previousTableData = useRef([]);
-
-  useEffect(() => {
-    const resultsRef = ref(database, 'results');
-    onValue(resultsRef, (snapshot) => {
-      setResults(snapshot.val() || {});
-    });
-
-    const submittedDataRef = ref(database, 'submittedData');
-    onValue(submittedDataRef, (snapshot) => {
-      setSubmittedData(snapshot.val() || {});
-    });
-  }, []);
-
-  useEffect(() => {
-    const kolejkaPoints = {};
-    const totalFinishedMatches = Object.keys(results).filter((id) => results[id]?.result).length;
-
-    const overallTableData = Object.keys(submittedData).map((user) => {
-      const bets = Object.entries(submittedData[user]).map(([id, bet]) => ({
-        ...bet,
-        id,
-      }));
-      const userTotal = calculatePoints(bets, results);
-      const points = userTotal.points;
-      const correctTypes = userTotal.correctTypes;
-      const correctResults = userTotal.correctResults;
-
-      const totalBetsSubmitted = bets.filter((b) => results[b.id]?.result).length;
-
-      // Group by kolejka
-      bets.forEach((bet) => {
-        const gameNumber = parseInt(bet.id, 10);
-        const kolejkaID = Math.ceil(gameNumber / 9);
-        if (!kolejkaPoints[kolejkaID]) kolejkaPoints[kolejkaID] = {};
-        if (!kolejkaPoints[kolejkaID][user]) {
-          kolejkaPoints[kolejkaID][user] = { user, points: 0, correctTypes: 0, correctResults: 0 };
-        }
-
-        const singleBetResult = calculatePoints([bet], results);
-        kolejkaPoints[kolejkaID][user].points += singleBetResult.points;
-        kolejkaPoints[kolejkaID][user].correctTypes += singleBetResult.correctTypes;
-        kolejkaPoints[kolejkaID][user].correctResults += singleBetResult.correctResults;
-      });
-
-      const ppb = totalBetsSubmitted > 0 ? (points / totalBetsSubmitted).toFixed(2) : '0.00';
-
-      return {
-        user,
-        points,
-        correctTypes,
-        correctResults,
-        totalBets: totalBetsSubmitted,
-        ppb: parseFloat(ppb),
-      };
-    });
-
-    // Sort overall table
-    overallTableData.sort(compareEntries);
-    assignPlaces(overallTableData);
-
-    const totalUsers = overallTableData.length;
-
-    overallTableData.forEach((entry) => {
-      const previousEntry = previousTableData.current.find((e) => e.user === entry.user);
-      entry.trend = previousEntry
-        ? previousEntry.place > entry.place
-          ? 'up'
-          : previousEntry.place < entry.place
-          ? 'down'
-          : 'same'
-        : 'same';
-
-      // Fair OVR Rating Calculation (Base 55 + Efficiency + Table Position, forgiving missed bets if efficiency is high)
-      const positionBonus = Math.max(0, (totalUsers - entry.place + 1) * 3);
-      const efficiencyBonus = entry.ppb * 18;
-      entry.ovr = Math.min(99, Math.round(55 + efficiencyBonus + positionBonus));
-
-      entry.comment = generateUserComment(entry, totalFinishedMatches, totalUsers);
-    });
-
-    previousTableData.current = overallTableData;
-    setMainTableData(overallTableData);
-
-    // Process kolejka tables and prizes
-    const sortedKolejkaTables = {};
-    const prizePool = {};
-    let earnings = {};
-
-    let currentRollover = 0;
-    const sortedKolejkaIDs = Object.keys(kolejkaPoints).sort((a, b) => Number(a) - Number(b));
-
-    sortedKolejkaIDs.forEach((kolejkaID) => {
-      const sortedKolejka = Object.values(kolejkaPoints[kolejkaID]).sort(compareEntries);
-      assignPlaces(sortedKolejka);
-
-      const topPlace = sortedKolejka[0]?.place;
-      const winners = sortedKolejka.filter((entry) => entry.place === topPlace).map((entry) => entry.user);
-
-      const currentPrize = 15 + currentRollover;
-
-      if (winners.length === 1) {
-        prizePool[kolejkaID] = { winners, prize: currentPrize };
-        currentRollover = 0;
-      } else {
-        prizePool[kolejkaID] = { winners, prize: 0, rollover: true };
-        currentRollover += 15;
-      }
-
-      winners.forEach((winner) => {
-        if (!earnings[winner]) earnings[winner] = 0;
-        if (prizePool[kolejkaID].prize > 0) {
-          earnings[winner] += currentPrize;
-        }
-      });
-
-      sortedKolejkaTables[kolejkaID] = sortedKolejka;
-    });
-
-    setPrizes(prizePool);
-    setKolejkaTables(sortedKolejkaTables);
-    setUserEarnings(earnings);
-  }, [submittedData, results]);
-
-  const toggleKolejkaVisibility = (kolejkaID) => {
-    setVisibleKolejka((prev) => (prev === kolejkaID ? null : kolejkaID));
-  };
-
-  return (
-    <Container fluid style={linkContainerStyle}>
-      <Row>
-        <Col md={12}>
-          <h3 style={{ textAlign: 'center' }}>Tabela</h3>
-          <div className="fade-in" style={{ overflowX: 'auto', marginTop: '10px' }}>
-            <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#212529', color: 'white' }}>
-                  <th style={tableHeaderStyle}>Miejsce</th>
-                  <th style={tableHeaderStyle}>Użytkownik</th>
-                  <th style={tableHeaderStyle}>OVR</th>
-                  <th style={tableHeaderStyle}>Pkt</th>
-                  <th style={tableHeaderStyle}>☑️ <br />typ</th>
-                  <th style={tableHeaderStyle}>✅☑️ <br />typ+wynik</th>
-                  <th style={tableHeaderStyle}>Komentarz</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mainTableData.map((entry, index) => (
-                  <tr
-                    key={index}
-                    style={{
-                      backgroundColor: getRankColor(index),
-                    }}
-                  >
-                    <td style={tableCellStyle}>{entry.place}</td>
-                    <td style={tableCellStyle}><b>{entry.user}</b></td>
-                    <td style={{ ...tableCellStyle, fontWeight: 'bold', color: '#ffd700' }}>
-                      {entry.ovr}
-                    </td>
-                    <td style={tableCellStyle}>{entry.points}</td>
-                    <td style={tableCellStyle}>{entry.correctTypes}</td>
-                    <td style={tableCellStyle}>{entry.correctResults}</td>
-                    <td style={{ ...tableCellStyle, fontSize: '0.85em', textAlign: 'left' }}>
-                      {entry.comment}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <hr />
-          
-          {Object.keys(kolejkaTables).map((kolejkaID) => {
-            const kolejkaData = kolejkaTables[kolejkaID];
-            const allZeroPoints = kolejkaData.every((entry) => entry.points === 0);
-
-            return (
-              <div key={kolejkaID}>
-                <hr style={{ color: 'white' }} />
-                <div style={prizeInfoStyle}>
-                  <h3><b>Kolejka {kolejkaID}</b><br /></h3>
-                  {allZeroPoints ? (
-                    <p>Nikt jeszcze nie zdobył punktów.</p>
-                  ) : (
-                    <p>
-                      {prizes[kolejkaID]?.winners.length === 1 ? (
-                        <>
-                          <b>Zwycięzca:</b> {prizes[kolejkaID].winners.join(', ')} (
-                          <b>{prizes[kolejkaID].prize} 🥮</b>)
-                        </>
-                      ) : (
-                        <>
-                          <b>Remis:</b> {prizes[kolejkaID].winners.join(', ')}. <br />
-                          Nagroda kumuluje się na następną kolejkę
-                        </>
-                      )}
-                    </p>
-                  )}
-                </div>
-                
-                <div
-                  style={textToggleStyle}
-                  onClick={() => toggleKolejkaVisibility(kolejkaID)}
-                >
-                  {visibleKolejka === kolejkaID
-                    ? `Ukryj Tabelę: Kolejka ${kolejkaID}`
-                    : `Pokaż Tabelę: Kolejka ${kolejkaID}`}
-                </div>
-                <hr />
-                
-                {visibleKolejka === kolejkaID && !allZeroPoints && (
-                  <div className="fade-in" style={{ overflowX: 'auto', marginTop: '10px' }}>
-                    <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-                      <thead>
-                        <tr style={{ backgroundColor: '#212529', color: 'white' }}>
-                          <th style={tableHeaderStyle}>Miejsce</th>
-                          <th style={tableHeaderStyle}>Użytkownik</th>
-                          <th style={tableHeaderStyle}>Pkt</th>
-                          <th style={tableHeaderStyle}>☑️ <br />typ</th>
-                          <th style={tableHeaderStyle}>✅☑️ <br />typ+wynik</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {kolejkaData.map((entry, index) => (
-                          <tr
-                            key={index}
-                            style={{
-                              backgroundColor: getRankColor(index),
-                            }}
-                          >
-                            <td style={tableCellStyle}>{entry.place}</td>
-                            <td style={tableCellStyle}>{entry.user}</td>
-                            <td style={tableCellStyle}>{entry.points}</td>
-                            <td style={tableCellStyle}>{entry.correctTypes}</td>
-                            <td style={tableCellStyle}>{entry.correctResults}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          <div style={earningsStyle}><hr></hr>
-            <p style={{ fontSize: '15px' }}>
-              22x60=1320 🥮
-              18 kolejek x 15 🥮 = 270 🥮
-              1320 - 270 = 1050 🥮 w puli
-              <hr/>
-            </p>
-            <div style={{ marginTop: '10px', color: '#FFD700' }}>
-              <b>Aktualne Nagrody :</b><hr />
-              {mainTableData[0] && (
-                <p>🥇 1 miejsce – <b>{mainTableData[0].user} - 550 🥮</b></p>
-              )}
-
-              {mainTableData[1] && (
-                <p>🥈 2 miejsce – <b>{mainTableData[1].user} – 350 🥮</b></p>
-              )}
-
-              {mainTableData[2] && (
-                <p>🥉 3 miejsce – <b>{mainTableData[2].user} – 150 🥮</b></p>
-              )}
-            </div>
-            <hr />
-            <div style={{ marginTop: '10px', color: '#FFD700' }}>
-              <b>Bonusy kolejkowe :<hr></hr></b>
-              {Object.entries(userEarnings)
-                .filter(([, earningsAmount]) => earningsAmount > 0)
-                .sort(([, earningsA], [, earningsB]) => earningsB - earningsA)
-                .map(([user, earningsAmount]) => (
-                  <p key={user}>
-                    {user}: {earningsAmount} 🥮
-                  </p>
-                ))}
-            </div>
-          </div>
-        </Col>
-      </Row><hr style={{ color: 'white' }}></hr>
-      <Stats />
-    </Container>
-  );
-};
-
-export default Table;
+  // 2. PlayStyles / Special Strengths (Precyzja trafień)
+  if (exactResultRatio >= 0.4 && correctResults >= 3) {
+    return '🎯 Chirurgiczna precyzja! Potrafi trafiać dokładne wyniki (3
