@@ -139,4 +139,318 @@ const generateUserComment = (entry, totalPlayedGames, totalUsers) => {
 
   // 2. PlayStyles / Special Strengths (Precyzja trafień)
   if (exactResultRatio >= 0.4 && correctResults >= 3) {
-    return '🎯 Chirurgiczna precyzja! Potrafi trafiać dokładne wyniki (3
+    return '🎯 Chirurgiczna precyzja! Potrafi trafiać dokładne wyniki (3 pkt).';
+  }
+  if (ppb >= 1.35) {
+    return '⭐ Błyskotliwa skuteczność! Wyciąga maksimum punktów ze swoich typów.';
+  }
+  if (place <= Math.ceil(totalUsers / 2)) {
+    return '📊 Stabilny gracz. Pewny marsz w górnej połowie tabeli.';
+  }
+
+  // 3. Lower Ranks - Only highlight missed bets/cold streaks if performance is poor
+  if (missedGames > 5 && ppb < 0.9) {
+    return '💤 Dużo opuszczonych kolejek i słabsza forma. Czas na mobilizację!';
+  }
+  if (ppb < 0.8) {
+    return '📉 Zimna seria. Potrzebna zmiana taktyki w kolejnych typach.';
+  }
+
+  return '🎲 W grze. Jedna udana kolejka wywinduje pozycję w tabeli.';
+};
+
+const Table = () => {
+  const [results, setResults] = useState({});
+  const [submittedData, setSubmittedData] = useState({});
+  const [mainTableData, setMainTableData] = useState([]);
+  const [kolejkaTables, setKolejkaTables] = useState({});
+  const [visibleKolejka, setVisibleKolejka] = useState(null);
+  const [prizes, setPrizes] = useState({});
+  const [userEarnings, setUserEarnings] = useState({});
+  const previousTableData = useRef([]);
+
+  useEffect(() => {
+    const resultsRef = ref(database, 'results');
+    onValue(resultsRef, (snapshot) => {
+      setResults(snapshot.val() || {});
+    });
+
+    const submittedDataRef = ref(database, 'submittedData');
+    onValue(submittedDataRef, (snapshot) => {
+      setSubmittedData(snapshot.val() || {});
+    });
+  }, []);
+
+  useEffect(() => {
+    const kolejkaPoints = {};
+    const totalFinishedMatches = Object.keys(results).filter((id) => results[id]?.result).length;
+
+    const overallTableData = Object.keys(submittedData).map((user) => {
+      const bets = Object.entries(submittedData[user]).map(([id, bet]) => ({
+        ...bet,
+        id,
+      }));
+      const userTotal = calculatePoints(bets, results);
+      const points = userTotal.points;
+      const correctTypes = userTotal.correctTypes;
+      const correctResults = userTotal.correctResults;
+
+      const totalBetsSubmitted = bets.filter((b) => results[b.id]?.result).length;
+
+      // Group by kolejka
+      bets.forEach((bet) => {
+        const gameNumber = parseInt(bet.id, 10);
+        const kolejkaID = Math.ceil(gameNumber / 9);
+        if (!kolejkaPoints[kolejkaID]) kolejkaPoints[kolejkaID] = {};
+        if (!kolejkaPoints[kolejkaID][user]) {
+          kolejkaPoints[kolejkaID][user] = { user, points: 0, correctTypes: 0, correctResults: 0 };
+        }
+
+        const singleBetResult = calculatePoints([bet], results);
+        kolejkaPoints[kolejkaID][user].points += singleBetResult.points;
+        kolejkaPoints[kolejkaID][user].correctTypes += singleBetResult.correctTypes;
+        kolejkaPoints[kolejkaID][user].correctResults += singleBetResult.correctResults;
+      });
+
+      const ppb = totalBetsSubmitted > 0 ? (points / totalBetsSubmitted).toFixed(2) : '0.00';
+
+      return {
+        user,
+        points,
+        correctTypes,
+        correctResults,
+        totalBets: totalBetsSubmitted,
+        ppb: parseFloat(ppb),
+      };
+    });
+
+    // Sort overall table
+    overallTableData.sort(compareEntries);
+    assignPlaces(overallTableData);
+
+    const totalUsers = overallTableData.length;
+
+    overallTableData.forEach((entry) => {
+      const previousEntry = previousTableData.current.find((e) => e.user === entry.user);
+      entry.trend = previousEntry
+        ? previousEntry.place > entry.place
+          ? '▲'
+          : previousEntry.place < entry.place
+          ? '▼'
+          : '='
+        : '=';
+
+      // Advanced Fair OVR Calculation
+      entry.ovr = calculateOVR(entry, totalUsers);
+
+      // Dynamic Comment prioritizing strengths
+      entry.comment = generateUserComment(entry, totalFinishedMatches, totalUsers);
+    });
+
+    previousTableData.current = overallTableData;
+    setMainTableData(overallTableData);
+
+    // Process kolejka tables and prizes
+    const sortedKolejkaTables = {};
+    const prizePool = {};
+    let earnings = {};
+
+    let currentRollover = 0;
+    const sortedKolejkaIDs = Object.keys(kolejkaPoints).sort((a, b) => Number(a) - Number(b));
+
+    sortedKolejkaIDs.forEach((kolejkaID) => {
+      const sortedKolejka = Object.values(kolejkaPoints[kolejkaID]).sort(compareEntries);
+      assignPlaces(sortedKolejka);
+
+      const topPlace = sortedKolejka[0]?.place;
+      const winners = sortedKolejka.filter((entry) => entry.place === topPlace).map((entry) => entry.user);
+
+      const currentPrize = 15 + currentRollover;
+
+      if (winners.length === 1) {
+        prizePool[kolejkaID] = { winners, prize: currentPrize };
+        currentRollover = 0;
+      } else {
+        prizePool[kolejkaID] = { winners, prize: 0, rollover: true };
+        currentRollover += 15;
+      }
+
+      winners.forEach((winner) => {
+        if (!earnings[winner]) earnings[winner] = 0;
+        if (prizePool[kolejkaID].prize > 0) {
+          earnings[winner] += currentPrize;
+        }
+      });
+
+      sortedKolejkaTables[kolejkaID] = sortedKolejka;
+    });
+
+    setPrizes(prizePool);
+    setKolejkaTables(sortedKolejkaTables);
+    setUserEarnings(earnings);
+  }, [submittedData, results]);
+
+  const toggleKolejkaVisibility = (kolejkaID) => {
+    setVisibleKolejka((prev) => (prev === kolejkaID ? null : kolejkaID));
+  };
+
+  return (
+    <Container fluid style={linkContainerStyle}>
+      <Row>
+        <Col md={12}>
+          <h3 style={{ textAlign: 'center' }}>Tabela</h3>
+          <div className="fade-in" style={{ overflowX: 'auto', marginTop: '10px' }}>
+            <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#212529', color: 'white' }}>
+                  <th style={tableHeaderStyle}>Miejsce</th>
+                  <th style={tableHeaderStyle}>Użytkownik</th>
+                  <th style={tableHeaderStyle}>OVR</th>
+                  <th style={tableHeaderStyle}>Pkt</th>
+                  <th style={tableHeaderStyle}>☑️ <br />typ</th>
+                  <th style={tableHeaderStyle}>✅☑️ <br />typ+wynik</th>
+                  <th style={tableHeaderStyle}>Komentarz</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mainTableData.map((entry, index) => (
+                  <tr
+                    key={index}
+                    style={{
+                      backgroundColor: getRankColor(index),
+                    }}
+                  >
+                    <td style={tableCellStyle}>{entry.place}</td>
+                    <td style={tableCellStyle}><b>{entry.user}</b></td>
+                    <td style={{ ...tableCellStyle, fontWeight: 'bold', color: '#ffd700' }}>
+                      {entry.ovr}
+                    </td>
+                    <td style={tableCellStyle}>{entry.points}</td>
+                    <td style={tableCellStyle}>{entry.correctTypes}</td>
+                    <td style={tableCellStyle}>{entry.correctResults}</td>
+                    <td style={{ ...tableCellStyle, fontSize: '0.85em', textAlign: 'left' }}>
+                      {entry.comment}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <hr />
+          
+          {Object.keys(kolejkaTables).map((kolejkaID) => {
+            const kolejkaData = kolejkaTables[kolejkaID];
+            const allZeroPoints = kolejkaData.every((entry) => entry.points === 0);
+
+            return (
+              <div key={kolejkaID}>
+                <hr style={{ color: 'white' }} />
+                <div style={prizeInfoStyle}>
+                  <h3><b>Kolejka {kolejkaID}</b><br /></h3>
+                  {allZeroPoints ? (
+                    <p>Nikt jeszcze nie zdobył punktów.</p>
+                  ) : (
+                    <p>
+                      {prizes[kolejkaID]?.winners.length === 1 ? (
+                        <>
+                          <b>Zwycięzca:</b> {prizes[kolejkaID].winners.join(', ')} (
+                          <b>{prizes[kolejkaID].prize} 🥮</b>)
+                        </>
+                      ) : (
+                        <>
+                          <b>Remis:</b> {prizes[kolejkaID].winners.join(', ')}. <br />
+                          Nagroda kumuluje się na następną kolejkę
+                        </>
+                      )}
+                    </p>
+                  )}
+                </div>
+                
+                <div
+                  style={textToggleStyle}
+                  onClick={() => toggleKolejkaVisibility(kolejkaID)}
+                >
+                  {visibleKolejka === kolejkaID
+                    ? `Ukryj Tabelę: Kolejka ${kolejkaID}`
+                    : `Pokaż Tabelę: Kolejka ${kolejkaID}`}
+                </div>
+                <hr />
+                
+                {visibleKolejka === kolejkaID && !allZeroPoints && (
+                  <div className="fade-in" style={{ overflowX: 'auto', marginTop: '10px' }}>
+                    <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#212529', color: 'white' }}>
+                          <th style={tableHeaderStyle}>Miejsce</th>
+                          <th style={tableHeaderStyle}>Użytkownik</th>
+                          <th style={tableHeaderStyle}>Pkt</th>
+                          <th style={tableHeaderStyle}>☑️ <br />typ</th>
+                          <th style={tableHeaderStyle}>✅☑️ <br />typ+wynik</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {kolejkaData.map((entry, index) => (
+                          <tr
+                            key={index}
+                            style={{
+                              backgroundColor: getRankColor(index),
+                            }}
+                          >
+                            <td style={tableCellStyle}>{entry.place}</td>
+                            <td style={tableCellStyle}>{entry.user}</td>
+                            <td style={tableCellStyle}>{entry.points}</td>
+                            <td style={tableCellStyle}>{entry.correctTypes}</td>
+                            <td style={tableCellStyle}>{entry.correctResults}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          <div style={earningsStyle}><hr></hr>
+            <p style={{ fontSize: '15px' }}>
+              22x60=1320 🥮
+              18 kolejek x 15 🥮 = 270 🥮
+              1320 - 270 = 1050 🥮 w puli
+              <hr/>
+            </p>
+            <div style={{ marginTop: '10px', color: '#FFD700' }}>
+              <b>Aktualne Nagrody :</b><hr />
+              {mainTableData[0] && (
+                <p>🥇 1 miejsce – <b>{mainTableData[0].user} - 550 🥮</b></p>
+              )}
+
+              {mainTableData[1] && (
+                <p>🥈 2 miejsce – <b>{mainTableData[1].user} – 350 🥮</b></p>
+              )}
+
+              {mainTableData[2] && (
+                <p>🥉 3 miejsce – <b>{mainTableData[2].user} – 150 🥮</b></p>
+              )}
+            </div>
+            <hr />
+            <div style={{ marginTop: '10px', color: '#FFD700' }}>
+              <b>Bonusy kolejkowe :<hr></hr></b>
+              {Object.entries(userEarnings)
+                .filter(([, earningsAmount]) => earningsAmount > 0)
+                .sort(([, earningsA], [, earningsB]) => earningsB - earningsA)
+                .map(([user, earningsAmount]) => (
+                  <p key={user}>
+                    {user}: {earningsAmount} 🥮
+                  </p>
+                ))}
+            </div>
+          </div>
+        </Col>
+      </Row><hr style={{ color: 'white' }}></hr>
+      <Stats />
+    </Container>
+  );
+};
+
+export default Table;
