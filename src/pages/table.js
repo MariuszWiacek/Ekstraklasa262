@@ -177,10 +177,10 @@ const Table = () => {
           kolejkaPoints[kolejkaID][user] = { user, points: 0, correctTypes: 0, correctResults: 0 };
         }
 
-        const { points, correctTypes, correctResults } = calculatePoints([bet], results);
-        kolejkaPoints[kolejkaID][user].points += points;
-        kolejkaPoints[kolejkaID][user].correctTypes += correctTypes;
-        kolejkaPoints[kolejkaID][user].correctResults += correctResults;
+        const betPointsCalc = calculatePoints([bet], results);
+        kolejkaPoints[kolejkaID][user].points += betPointsCalc.points;
+        kolejkaPoints[kolejkaID][user].correctTypes += betPointsCalc.correctTypes;
+        kolejkaPoints[kolejkaID][user].correctResults += betPointsCalc.correctResults;
       });
 
       // Efficiency Rating (Points per bet played)
