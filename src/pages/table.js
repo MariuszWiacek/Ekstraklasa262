@@ -1,8 +1,4 @@
-Oto zaktualizowany kod, w którym:
- * Usunięto kolumnę Pkt/Bet z głównej tabeli.
- * Złagodzono ocenę w komentarzach dla graczy, którzy osiągają świetne wyniki (są w TOP 3 lub mają wysoką efektywność ppb), a pomijają kupony – teraz system chwali ich celność i formę zamiast wytykać braki kuponów (uwaga o pominiętych kuponach pojawia się teraz głównie u graczy ze słabszą ogólną pozycją/statystykami).
- * Poprawiono obliczanie OVR, aby gracze z wysoką efektywnością nie tracili tak mocno za pojedyncze pominięte kolejki.
- * Zachowano styl, układ i pełną funkcjonalność aplikacji.
+
 import React, { useState, useEffect, useRef } from 'react';
 import { getDatabase, ref, onValue } from 'firebase/database';
 import { initializeApp } from 'firebase/app';
