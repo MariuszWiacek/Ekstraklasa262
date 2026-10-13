@@ -105,58 +105,26 @@ const assignPlaces = (data) => {
   });
 };
 
-// Advanced & Fair OVR Calculation (0-99)
-const calculateOVR = (entry, totalUsers) => {
-  const { points, totalBets, correctResults, correctTypes, place } = entry;
-  if (totalBets === 0) return 50;
-
-  // 1. Efficiency Score (Points per bet, scale 0-35)
-  const ppb = points / totalBets;
-  const efficiencyScore = Math.min(35, ppb * 22);
-
-  // 2. Precision Ratio (Exact results relative to total hits, scale 0-25)
-  const precisionRatio = correctTypes > 0 ? correctResults / correctTypes : 0;
-  const precisionScore = Math.min(25, precisionRatio * 40);
-
-  // 3. Table Position Bonus (Scale 0-35)
-  const positionBonus = totalUsers > 0 ? Math.max(0, ((totalUsers - place + 1) / totalUsers) * 35) : 0;
-
-  // Base OVR 50 + sub-scores (Max 99)
-  const calculatedOVR = Math.round(50 + (efficiencyScore + precisionScore + positionBonus) / 2.2);
-  return Math.min(99, Math.max(50, calculatedOVR));
-};
-
 // Generates dynamic feedback prioritizing skills, high performance & accuracy over missed bets
 const generateUserComment = (entry, totalPlayedGames, totalUsers) => {
-  const { place, totalBets, ppb, correctResults, correctTypes } = entry;
+  const { place, totalBets, ppb } = entry;
   const missedGames = totalPlayedGames - totalBets;
   const isTopThree = place <= 3;
-  const exactResultRatio = correctTypes > 0 ? correctResults / correctTypes : 0;
+  const isHighEfficiency = ppb >= 1.3;
 
-  // 1. High-performing / Top Users - Praise strengths regardless of missed bets
-  if (place === 1) return '👑 Lider tabeli! Niesamowita regularność i wysoka chłodna precyzja.';
-  if (isTopThree) return '🔥 Walczy o podium! Ogromna presja na liderze i wysoka skuteczność.';
+  // 1. High-performing / top users get praised for skills even if they miss a few bets
+  if (place === 1) return '👑 Leader of the pack! Consistent high-value picks.';
+  if (place === 2 || place === 3) return '🔥 Podium contender! Great accuracy and heavy pressure on 1st place.';
+  if (isHighEfficiency) return '⭐ High efficiency and sharp eye for outcomes!';
 
-  // 2. PlayStyles / Special Strengths (Precyzja trafień)
-  if (exactResultRatio >= 0.4 && correctResults >= 3) {
-    return '🎯 Chirurgiczna precyzja! Potrafi trafiać dokładne wyniki (3 pkt).';
-  }
-  if (ppb >= 1.35) {
-    return '⭐ Błyskotliwa skuteczność! Wyciąga maksimum punktów ze swoich typów.';
-  }
-  if (place <= Math.ceil(totalUsers / 2)) {
-    return '📊 Stabilny gracz. Pewny marsz w górnej połowie tabeli.';
-  }
+  // 2. Middle / Good Bettors
+  if (place <= Math.ceil(totalUsers / 2)) return '📊 Balanced bettor. Cruising safely in the upper half.';
 
-  // 3. Lower Ranks - Only highlight missed bets/cold streaks if performance is poor
-  if (missedGames > 5 && ppb < 0.9) {
-    return '💤 Dużo opuszczonych kolejek i słabsza forma. Czas na mobilizację!';
-  }
-  if (ppb < 0.8) {
-    return '📉 Zimna seria. Potrzebna zmiana taktyki w kolejnych typach.';
-  }
+  // 3. Low Bettors or Cold Streaks (only penalize comments here if overall stats are low)
+  if (missedGames > 5 && ppb < 0.9) return '💤 Missing in action and struggling for form. Needs more submitted bets.';
+  if (ppb < 0.8) return '📉 Rough streak lately. Needs a reset on outcome strategies.';
 
-  return '🎲 W grze. Jedna udana kolejka wywinduje pozycję w tabeli.';
+  return '🎲 In the mix. One good round can jump multiple places.';
 };
 
 const Table = () => {
@@ -234,16 +202,17 @@ const Table = () => {
       const previousEntry = previousTableData.current.find((e) => e.user === entry.user);
       entry.trend = previousEntry
         ? previousEntry.place > entry.place
-          ? '▲'
+          ? 'up'
           : previousEntry.place < entry.place
-          ? '▼'
-          : '='
-        : '=';
+          ? 'down'
+          : 'same'
+        : 'same';
 
-      // Advanced Fair OVR Calculation
-      entry.ovr = calculateOVR(entry, totalUsers);
+      // Fair OVR Rating Calculation (Base 55 + Efficiency + Table Position, forgiving missed bets if efficiency is high)
+      const positionBonus = Math.max(0, (totalUsers - entry.place + 1) * 3);
+      const efficiencyBonus = entry.ppb * 18;
+      entry.ovr = Math.min(99, Math.round(55 + efficiencyBonus + positionBonus));
 
-      // Dynamic Comment prioritizing strengths
       entry.comment = generateUserComment(entry, totalFinishedMatches, totalUsers);
     });
 
