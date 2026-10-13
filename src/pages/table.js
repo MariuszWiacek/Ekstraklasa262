@@ -259,7 +259,7 @@ const Table = () => {
                     <td style={tableCellStyle}>{entry.place}</td>
                     <td style={tableCellStyle}><b>{entry.user}</b></td>
                     <td style={tableCellStyle}>{entry.points}</td>
-                    <td style={tableCellStyle}>{entry.ppb}</td>
+                    
                     <td style={tableCellStyle}>{entry.correctTypes}</td>
                     <td style={tableCellStyle}>{entry.correctResults}</td>
                   </tr>
