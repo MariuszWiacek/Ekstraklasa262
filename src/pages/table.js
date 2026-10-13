@@ -64,25 +64,28 @@ const earningsStyle = {
   marginTop: '30px',
 };
 
+// Helper function to set background colors for top 3 positions
 const getRankColor = (index) => {
   switch (index) {
     case 0:
-      return 'rgba(255, 215, 0, 0.45)';
+      return 'rgba(255, 215, 0, 0.45)'; // Gold
     case 1:
-      return 'rgba(192, 192, 192, 0.45)';
+      return 'rgba(192, 192, 192, 0.45)'; // Silver
     case 2:
-      return 'rgba(205, 127, 50, 0.45)';
+      return 'rgba(205, 127, 50, 0.45)'; // Bronze
     default:
-      return 'rgba(0, 0, 0, 0.336)';
+      return 'rgba(0, 0, 0, 0.336)'; // Default dark row
   }
 };
 
+// Helper function to compare two entries for tie-breaking
 const compareEntries = (a, b) => {
   if (b.points !== a.points) return b.points - a.points;
   if (b.correctResults !== a.correctResults) return b.correctResults - a.correctResults;
   return b.correctTypes - a.correctTypes;
 };
 
+// Helper function to assign places with ties
 const assignPlaces = (data) => {
   data.forEach((entry, index) => {
     if (index === 0) {
@@ -102,22 +105,27 @@ const assignPlaces = (data) => {
   });
 };
 
+// Generates dynamic feedback prioritizing table placement & accuracy over missed bets
 const generateUserComment = (entry, totalPlayedGames, totalUsers) => {
-  const { place, ppb } = entry;
-  const missedGames = totalPlayedGames - entry.totalBets;
+  const { place, totalBets, points, ppb, correctTypes, correctResults } = entry;
+  const missedGames = totalPlayedGames - totalBets;
   const isTopThree = place <= 3;
   const isHighEfficiency = ppb >= 1.5;
 
+  // 1. Prioritize high-performing users who missed bets
   if (missedGames > 0 && (isTopThree || isHighEfficiency)) {
     return `🎯 Sniper! Missed ${missedGames} bet(s), but still holding place #${place} with ${ppb} pts/bet!`;
   }
 
+  // 2. High Table Positions
   if (place === 1) return '👑 Leader of the pack! Consistent high-value picks.';
   if (place === 2 || place === 3) return '🔥 Podium contender! Heavy pressure on 1st place.';
 
+  // 3. Middle / Good Bettors
   if (ppb >= 1.2) return '⭐ Solid efficiency. Very reliable accuracy when picking.';
   if (place <= Math.ceil(totalUsers / 2)) return '📊 Balanced bettor. Cruising safely in the upper half.';
 
+  // 4. Low Bettors or Cold Streaks
   if (missedGames > 5) return '💤 Missing in action! Needs more submitted bets to push higher.';
   if (ppb < 0.8) return '📉 Rough streak lately. Needs a reset on outcome strategies.';
 
@@ -155,13 +163,12 @@ const Table = () => {
         ...bet,
         id,
       }));
-      const userTotal = calculatePoints(bets, results);
-      const points = userTotal.points;
-      const correctTypes = userTotal.correctTypes;
-      const correctResults = userTotal.correctResults;
+      const { points, correctTypes, correctResults } = calculatePoints(bets, results);
 
+      // Total bets submitted for finished games
       const totalBetsSubmitted = bets.filter((b) => results[b.id]?.result).length;
 
+      // Group by kolejka
       bets.forEach((bet) => {
         const gameNumber = parseInt(bet.id, 10);
         const kolejkaID = Math.ceil(gameNumber / 9);
@@ -170,12 +177,13 @@ const Table = () => {
           kolejkaPoints[kolejkaID][user] = { user, points: 0, correctTypes: 0, correctResults: 0 };
         }
 
-        const betResult = calculatePoints([bet], results);
-        kolejkaPoints[kolejkaID][user].points += betResult.points;
-        kolejkaPoints[kolejkaID][user].correctTypes += betResult.correctTypes;
-        kolejkaPoints[kolejkaID][user].correctResults += betResult.correctResults;
+        const { points, correctTypes, correctResults } = calculatePoints([bet], results);
+        kolejkaPoints[kolejkaID][user].points += points;
+        kolejkaPoints[kolejkaID][user].correctTypes += correctTypes;
+        kolejkaPoints[kolejkaID][user].correctResults += correctResults;
       });
 
+      // Efficiency Rating (Points per bet played)
       const ppb = totalBetsSubmitted > 0 ? (points / totalBetsSubmitted).toFixed(2) : '0.00';
 
       return {
@@ -188,21 +196,36 @@ const Table = () => {
       };
     });
 
+    // Sort overall table
     overallTableData.sort(compareEntries);
     assignPlaces(overallTableData);
 
     const totalUsers = overallTableData.length;
 
+    // Calculate OVR & Assign Comments
     overallTableData.forEach((entry) => {
+      const previousEntry = previousTableData.current.find((e) => e.user === entry.user);
+      entry.trend = previousEntry
+        ? previousEntry.place > entry.place
+          ? 'up'
+          : previousEntry.place < entry.place
+          ? 'down'
+          : 'same'
+        : 'same';
+
+      // Fair OVR Rating Calculation (Base 50 + Efficiency + Table Position)
       const positionBonus = Math.max(0, (totalUsers - entry.place + 1) * 3);
       const efficiencyBonus = entry.ppb * 15;
       entry.ovr = Math.min(99, Math.round(50 + efficiencyBonus + positionBonus));
+
+      // Generate dynamic comment prioritizing performance & table rank
       entry.comment = generateUserComment(entry, totalFinishedMatches, totalUsers);
     });
 
     previousTableData.current = overallTableData;
     setMainTableData(overallTableData);
 
+    // Process kolejka tables and prizes
     const sortedKolejkaTables = {};
     const prizePool = {};
     let earnings = {};
