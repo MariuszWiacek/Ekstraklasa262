@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { getDatabase, ref, onValue } from 'firebase/database';
 import { initializeApp } from 'firebase/app';
@@ -64,14 +65,6 @@ const Stats = () => {
     let absoluteMaxDrawsCorrect = 0;
     let absoluteMaxExactScores = 0;
     let absoluteMaxOutcomeCorrect = 0;
-
-    const playedMatchesCount = Object.values(results).filter(res => {
-      if (!res) return false;
-      const resString = typeof res === 'object' ? String(res.score || '') : String(res);
-      return resString.includes(':') && resString.trim() !== '';
-    }).length;
-
-    const currentMatchesBase = playedMatchesCount > 0 ? playedMatchesCount : 1;
 
     Object.keys(submittedData).forEach((user, index) => {
       const bets = submittedData[user] || {};
@@ -223,23 +216,22 @@ const Stats = () => {
     const top1EmptyCount = emptyRanks[0] || null;
     const top2EmptyCount = emptyRanks[1] || null;
 
+    const totalUsersCount = rawProfiles.length;
     const usedVerdicts = new Set();
 
     const output = rawProfiles.map(p => {
-      let OVR = 0;
+      let OVR = 60;
       if (p.outcomeTotal === 0) {
         OVR = 10;
       } else {
-        const maxPossiblePoints = p.outcomeTotal * 3;
-        const performanceRatio = p.calculatedPoints / maxPossiblePoints;
+        // Nowy algorytm OVR oparty na faktycznie rozegranych przez gracza kuponach (nie kara za puste mecze)
+        const pointsPerBet = p.calculatedPoints / p.outcomeTotal; // Śr. pkt na rozegrany kupon
+        const efficiencyScore = Math.min(45, pointsPerBet * 24); // Skala efektywności
 
-        let baseOvr = (performanceRatio / 0.45) * 100;
+        const exactResultRatio = p.outcomeTotal > 0 ? p.scoreCorrect / p.outcomeTotal : 0;
+        const precisionScore = Math.min(25, exactResultRatio * 50); // Bonus za dokładne wyniki
 
-        const missedMatchesInCurrentPool = currentMatchesBase - p.outcomeTotal;
-        if (missedMatchesInCurrentPool > 0) {
-          baseOvr -= (missedMatchesInCurrentPool * 2.5);
-        }
-
+        let baseOvr = 45 + efficiencyScore + precisionScore;
         OVR = Math.max(1, Math.min(Math.round(baseOvr), 99));
       }
 
@@ -583,3 +575,4 @@ const Stats = () => {
 };
 
 export default Stats;
+
