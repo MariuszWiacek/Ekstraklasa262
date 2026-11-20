@@ -1182,7 +1182,7 @@
     "id": 131,
     "kolejkaId": 15,
     "home": "Radomiak",
-    "away": "Wisła",
+    "away": "Wisła K.",
     "kickoff": "20:15",
     "date": "2026-11-21",
     "disabled": false
@@ -1208,7 +1208,7 @@
   {
     "id": 134,
     "kolejkaId": 15,
-    "home": "Wisła",
+    "home": "Wisła P.",
     "away": "Legia",
     "kickoff": "17:30",
     "date": "2026-11-22",
@@ -1236,7 +1236,7 @@
     "id": 137,
     "kolejkaId": 16,
     "home": "Górnik",
-    "away": "Wisła",
+    "away": "Wisła P.",
     "kickoff": "20:30",
     "date": "2026-11-27",
     "disabled": false
@@ -1262,7 +1262,7 @@
   {
     "id": 140,
     "kolejkaId": 16,
-    "home": "Wisła",
+    "home": "Wisła K.",
     "away": "Motor",
     "kickoff": "20:15",
     "date": "2026-11-28",
@@ -1317,7 +1317,7 @@
     "id": 146,
     "kolejkaId": 17,
     "home": "Zagłębie",
-    "away": "Wisła",
+    "away": "Wisła K.",
     "kickoff": "20:30",
     "date": "2026-12-04",
     "disabled": false
@@ -1379,7 +1379,7 @@
   {
     "id": 153,
     "kolejkaId": 17,
-    "home": "Wisła",
+    "home": "Wisła P.",
     "away": "Śląsk",
     "kickoff": "19:00",
     "date": "2026-12-07",
